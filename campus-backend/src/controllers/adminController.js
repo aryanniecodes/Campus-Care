@@ -8,12 +8,15 @@ exports.getAllComplaints = async (req, res) => {
       .select("title description category status assignedWorker createdAt")
       .sort({ createdAt: -1 });
 
-    console.log(`Admin: Found ${complaints.length} complaints`);
-
-    res.status(200).json({ complaints });
+    res.status(200).json({
+      success: true,
+      data: { complaints }
+    });
   } catch (error) {
-    console.error("Error fetching complaints:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
@@ -23,11 +26,14 @@ exports.getAllWorkers = async (req, res) => {
     const workers = await Worker.find()
       .select("name role tasksAssigned available");
 
-    console.log(`Admin: Found ${workers.length} workers`);
-
-    res.status(200).json({ workers });
+    res.status(200).json({
+      success: true,
+      data: { workers }
+    });
   } catch (error) {
-    console.error("Error fetching workers:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };

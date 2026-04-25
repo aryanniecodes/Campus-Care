@@ -1,26 +1,25 @@
 const Complaint = require("../models/Complaint");
 const Worker = require("../models/Worker");
 const sendEmail = require("../utils/sendEmail");
+const classifyComplaint = require("../ai/classifyComplaint");
+const generateEmail = require("../ai/generateEmail");
 
-// 🔥 CREATE COMPLAINT + AI + ASSIGNMENT
+// 🔥 CREATE COMPLAINT
 exports.createComplaint = async (req, res) => {
   try {
     const { title, description, studentId } = req.body;
 
     if (!title || !description || !studentId) {
-      return res.status(400).json({ message: "Title, description, and studentId are required" });
+      return res.status(400).json({
+        success: false,
+        message: "Title, description, and studentId are required"
+      });
     }
 
-    // 1. Keyword-based category detection
-    const text = (title + " " + description).toLowerCase();
-    let category = "other";
+    // AI Classification
+    const category = await classifyComplaint(title, description);
 
-    if (text.includes("fan") || text.includes("light")) category = "electrician";
-    else if (text.includes("water") || text.includes("leakage")) category = "plumber";
-    else if (text.includes("cleaning")) category = "cleaner";
-    else if (text.includes("food") || text.includes("mess")) category = "mess";
-
-    // 2. Strict worker assignment (role = category, available = true, tasksAssigned < 5)
+    // Worker assignment
     const worker = await Worker.findOne({
       role: category,
       available: true,
@@ -30,32 +29,20 @@ exports.createComplaint = async (req, res) => {
     let assignedWorker = null;
     let status = "pending";
 
-    // 3. Assignment Behavior
     if (worker) {
       assignedWorker = worker._id;
       status = "assigned";
-
       worker.tasksAssigned += 1;
-      if (worker.tasksAssigned === 5) {
-        worker.available = false;
-      }
+      if (worker.tasksAssigned === 5) worker.available = false;
       await worker.save();
 
-      // Send email notification to worker
-      sendEmail(
-        worker.email,
-        "New task assigned",
-        `New task assigned: ${title}`
-      );
+      // AI Email content
+      const emailText = await generateEmail(title, category);
+      sendEmail(worker.email, "New task assigned", emailText);
     }
 
-    // 4. Image handling (optional multer)
-    let imagePath = null;
-    if (req.file) {
-      imagePath = `/uploads/${req.file.filename}`;
-    }
+    let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    // 5. Save Complaint
     const newComplaint = new Complaint({
       title,
       description,
@@ -68,38 +55,40 @@ exports.createComplaint = async (req, res) => {
 
     await newComplaint.save();
 
-    // 6. Response
-    if (!worker) {
-      return res.status(201).json({
-        message: "No worker available",
-        complaint: newComplaint
-      });
-    }
-
     res.status(201).json({
-      message: "Complaint created and assigned",
-      complaint: newComplaint,
-      worker: {
-        name: worker.name,
-        role: worker.role,
-        tasks: worker.tasksAssigned
+      success: true,
+      message: worker ? "Complaint created and assigned" : "No worker available",
+      data: {
+        complaint: newComplaint,
+        worker: worker ? {
+          name: worker.name,
+          role: worker.role,
+          tasks: worker.tasksAssigned
+        } : null
       }
     });
 
   } catch (error) {
-    console.error("Error in createComplaint:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
-
-// 🔍 GET ALL COMPLAINTS (ADMIN)
+// 🔍 GET ALL COMPLAINTS
 exports.getAllComplaints = async (req, res) => {
   try {
     const complaints = await Complaint.find().sort({ createdAt: -1 });
-    res.status(200).json({ complaints });
+    res.status(200).json({
+      success: true,
+      data: { complaints }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
@@ -111,7 +100,7 @@ exports.giveFeedback = async (req, res) => {
 
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
-      return res.status(404).json({ message: "Complaint not found" });
+      return res.status(404).json({ success: false, message: "Complaint not found" });
     }
 
     if (rating !== undefined) complaint.rating = rating;
@@ -121,34 +110,50 @@ exports.giveFeedback = async (req, res) => {
     await complaint.save();
 
     res.status(200).json({
+      success: true,
       message: "Feedback submitted",
-      complaint
+      data: { complaint }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
-// 📊 GET COMPLAINTS BY STATUS
+// 📊 GET BY STATUS
 exports.getComplaintsByStatus = async (req, res) => {
   try {
     const { status } = req.params;
     const complaints = await Complaint.find({ status }).sort({ createdAt: -1 });
-    res.status(200).json({ complaints });
+    res.status(200).json({
+      success: true,
+      data: { complaints }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
-// 📈 GET DASHBOARD SUMMARY
+// 📈 DASHBOARD SUMMARY
 exports.getDashboardSummary = async (req, res) => {
   try {
     const total = await Complaint.countDocuments();
     const completed = await Complaint.countDocuments({ status: "completed" });
     const pending = await Complaint.countDocuments({ status: "pending" });
 
-    res.status(200).json({ total, completed, pending });
+    res.status(200).json({
+      success: true,
+      data: { total, completed, pending }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };

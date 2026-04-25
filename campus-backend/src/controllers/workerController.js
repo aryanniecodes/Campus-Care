@@ -12,9 +12,15 @@ exports.getWorkerTasks = async (req, res) => {
       .select("title description status category image createdAt")
       .sort({ createdAt: -1 });
 
-    res.status(200).json({ tasks });
+    res.status(200).json({
+      success: true,
+      data: { tasks }
+    });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
@@ -25,12 +31,11 @@ exports.completeTask = async (req, res) => {
 
     const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
-      return res.status(404).json({ message: "Complaint not found" });
+      return res.status(404).json({ success: false, message: "Complaint not found" });
     }
 
-    // Safety Check: Ensure worker is assigned
     if (!complaint.assignedWorker) {
-      return res.status(400).json({ message: "No worker assigned to this complaint" });
+      return res.status(400).json({ success: false, message: "No worker assigned to this complaint" });
     }
 
     complaint.status = "completed";
@@ -43,22 +48,21 @@ exports.completeTask = async (req, res) => {
       await worker.save();
     }
 
-    // Send email notification to student
     const student = await Student.findOne({ rollNo: complaint.studentId });
     if (student && student.email) {
-      sendEmail(
-        student.email,
-        "Task Completed",
-        "Your complaint has been resolved"
-      );
+      sendEmail(student.email, "Task Completed", "Your complaint has been resolved");
     }
 
     res.status(200).json({
+      success: true,
       message: "Task marked as completed",
-      complaint
+      data: { complaint }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
 
@@ -69,17 +73,21 @@ exports.toggleAvailability = async (req, res) => {
     const worker = await Worker.findById(workerId).select("-password");
     
     if (!worker) {
-      return res.status(404).json({ message: "Worker not found" });
+      return res.status(404).json({ success: false, message: "Worker not found" });
     }
     
     worker.available = !worker.available;
     await worker.save();
     
     res.status(200).json({ 
+      success: true,
       message: "Availability updated", 
-      worker 
+      data: { worker } 
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({
+      success: false,
+      message: error.message
+    });
   }
 };
