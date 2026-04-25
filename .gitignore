@@ -1,24 +1,21 @@
-# dependencies
+# Node
 node_modules/
-
-# environment variables
+dist/
 .env
 
-# logs
+# Python
+__pycache__/
+*.pyc
+venv/
+
+# Logs
 logs
 *.log
-npm-debug.log*
 
-# OS files
+# OS
 .DS_Store
 Thumbs.db
 
-# uploads (optional - if you don't want images public)
-uploads/
-
-# build files
-dist/
-build/
-
 # IDE
 .vscode/
+.cursor/
