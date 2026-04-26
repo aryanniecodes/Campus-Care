@@ -3,7 +3,29 @@ const Worker = require("../models/Worker");
 const Student = require("../models/Student");
 const sendEmail = require("../utils/sendEmail");
 
-// 1. Get Assigned Tasks
+// 1. Get Logged In Worker (Me)
+exports.getWorkerMe = async (req, res) => {
+  try {
+    const worker = await Worker.findById(req.user.id).select("-password");
+    if (!worker) {
+      return res.status(404).json({ success: false, message: "Worker not found" });
+    }
+
+    const completedTasks = await Complaint.countDocuments({ 
+      assignedTo: req.user.id, 
+      status: "completed" 
+    });
+
+    res.status(200).json({ 
+      success: true, 
+      data: { ...worker.toObject(), completedTasks } 
+    });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 2. Get Assigned Tasks
 exports.getWorkerTasks = async (req, res) => {
   try {
     const { workerId } = req.params;
@@ -27,42 +49,58 @@ exports.getWorkerTasks = async (req, res) => {
 // 2. Mark Task Complete
 exports.completeTask = async (req, res) => {
   try {
-    const { complaintId } = req.params;
+    const complaint = await Complaint.findById(req.params.id);
 
-    const complaint = await Complaint.findById(complaintId);
     if (!complaint) {
-      return res.status(404).json({ success: false, message: "Complaint not found" });
+      return res.status(404).json({ message: "Complaint not found" });
     }
 
-    if (!complaint.assignedWorker) {
-      return res.status(400).json({ success: false, message: "No worker assigned to this complaint" });
+    if (complaint.status === "completed") {
+      return res.status(400).json({
+        message: "Task already completed"
+      });
     }
 
+    // Update complaint
     complaint.status = "completed";
     await complaint.save();
 
-    const worker = await Worker.findById(complaint.assignedWorker);
+    // Update worker
+    const worker = await Worker.findById(req.user.id);
     if (worker) {
       worker.tasksAssigned = Math.max(0, worker.tasksAssigned - 1);
       worker.available = true;
       await worker.save();
     }
 
-    const student = await Student.findOne({ rollNo: complaint.studentId });
-    if (student && student.email) {
-      sendEmail(student.email, "Task Completed", "Your complaint has been resolved");
+    // Send email to student
+    const student = await Student.findById(complaint.studentId);
+
+    if (student) {
+      const message = `
+Your complaint has been resolved
+
+Title: ${complaint.title}
+Status: Completed
+
+Thank you for your patience.
+      `;
+
+      const testEmail = "2k25cse2511053@gmail.com";
+      console.log("SENDING COMPLETION EMAIL TO:", testEmail);
+
+      await sendEmail(
+        testEmail,
+        "Complaint Resolved",
+        message
+      );
     }
 
-    res.status(200).json({
-      success: true,
-      message: "Task marked as completed",
-      data: { complaint }
-    });
+    res.json({ success: true, message: "Task marked as completed" });
+
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.log(error);
+    res.status(500).json({ message: error.message });
   }
 };
 

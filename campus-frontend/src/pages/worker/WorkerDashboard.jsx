@@ -11,7 +11,35 @@ const StatCard = ({ label, value, color = "text-gray-900" }) => (
 
 const WorkerDashboard = () => {
   const [tasks, setTasks] = useState([]);
+  const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingId, setLoadingId] = useState(null);
+
+  const fetchWorkerData = async () => {
+    try {
+      const res = await api.get("/worker/me");
+      setWorker(res.data.data);
+    } catch (error) {
+      console.log(error);
+    }
+  };
+
+  const handleComplete = async (id) => {
+    try {
+      setLoadingId(id);
+      await api.put(`/worker/complete/${id}`);
+      alert("Task completed");
+
+      // Refresh tasks
+      setTasks((prev) => prev.filter((t) => t._id !== id));
+      // Refresh worker stats
+      fetchWorkerData();
+    } catch (error) {
+      console.log(error);
+    } finally {
+      setLoadingId(null);
+    }
+  };
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -27,6 +55,7 @@ const WorkerDashboard = () => {
     };
 
     fetchTasks();
+    fetchWorkerData();
   }, []);
 
   return (
@@ -39,8 +68,8 @@ const WorkerDashboard = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard label="Assigned Tasks" value={loading ? "..." : tasks.length} />
-          <StatCard label="Completed Today" value="—" color="text-green-600" />
-          <StatCard label="Availability" value="—" color="text-blue-600" />
+          <StatCard label="Tasks Completed" value={worker ? worker.completedTasks : "..."} color="text-green-600" />
+          <StatCard label="Availability" value={worker ? (worker.available ? "Available" : "Busy") : "..."} color="text-blue-600" />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
@@ -52,10 +81,21 @@ const WorkerDashboard = () => {
           ) : (
             <div className="space-y-4">
               {tasks.map(t => (
-                <div key={t._id} className="border-b border-gray-50 pb-2">
-                  <p className="font-medium text-gray-900">{t.title}</p>
-                  <p className="text-sm text-gray-600 mt-1">{t.description}</p>
-                  <p className="text-xs text-gray-500 mt-2">Status: {t.status} | Priority: {t.priority}</p>
+                <div key={t._id} className="border-b border-gray-50 pb-4 flex justify-between items-center flex-wrap gap-4">
+                  <div>
+                    <p className="font-medium text-gray-900">{t.title}</p>
+                    <p className="text-sm text-gray-600 mt-1">{t.description}</p>
+                    <p className="text-xs text-gray-500 mt-2">Status: {t.status} | Priority: {t.priority}</p>
+                  </div>
+                  {t.status !== "completed" && (
+                    <button
+                      disabled={loadingId === t._id}
+                      onClick={() => handleComplete(t._id)}
+                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {loadingId === t._id ? "Processing..." : "Mark as Completed"}
+                    </button>
+                  )}
                 </div>
               ))}
             </div>
