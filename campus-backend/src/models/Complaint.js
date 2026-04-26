@@ -6,7 +6,10 @@ const complaintSchema = new mongoose.Schema({
   category: String,
   image: String,
   studentId: String,
-  assignedWorker: String,
+  assignedTo: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Worker"
+  },
   proofImage: String,
   rating: Number,
   feedback: String,

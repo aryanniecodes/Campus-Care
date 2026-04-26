@@ -2,6 +2,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Student = require("../models/Student");
 const Worker = require("../models/Worker");
+const Admin = require("../models/Admin");
 
 const JWT_SECRET = process.env.JWT_SECRET || "mysecret123";
 
@@ -99,15 +100,25 @@ exports.login = async (req, res) => {
 
     // Admin check
     if (role === "admin") {
-      if (id === "admin@gmail.com" && password === "admin123") {
-        const token = jwt.sign({ id: "admin", role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
-        return res.json({
-          success: true,
-          message: "Login successful",
-          data: { role: "admin", name: "Administrator", token }
-        });
+      console.log("Admin login input:", id);
+      const admin = await Admin.findOne({ email: id });
+      console.log("Admin found:", admin);
+
+      if (!admin) {
+        return res.status(401).json({ success: false, message: "Invalid admin credentials" });
       }
-      return res.status(401).json({ success: false, message: "Invalid admin credentials" });
+
+      const isMatch = await bcrypt.compare(password, admin.password);
+      if (!isMatch) {
+        return res.status(401).json({ success: false, message: "Invalid admin credentials" });
+      }
+
+      const token = jwt.sign({ id: admin._id, role: "admin" }, JWT_SECRET, { expiresIn: "7d" });
+      return res.json({
+        success: true,
+        message: "Login successful",
+        data: { role: "admin", name: admin.name || "Administrator", token }
+      });
     }
 
     let user;

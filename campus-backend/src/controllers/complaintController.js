@@ -7,12 +7,12 @@ const generateEmail = require("../ai/generateEmail");
 // 🔥 CREATE COMPLAINT
 exports.createComplaint = async (req, res) => {
   try {
-    const { title, description, studentId } = req.body;
+    const { title, description } = req.body;
 
-    if (!title || !description || !studentId) {
+    if (!title || !description) {
       return res.status(400).json({
         success: false,
-        message: "Title, description, and studentId are required"
+        message: "Title and description are required"
       });
     }
 
@@ -26,14 +26,14 @@ exports.createComplaint = async (req, res) => {
       tasksAssigned: { $lt: 5 }
     });
 
-    let assignedWorker = null;
+    let assignedTo = null;
     let status = "pending";
 
     if (worker) {
-      assignedWorker = worker._id;
+      assignedTo = worker._id;
       status = "assigned";
       worker.tasksAssigned += 1;
-      if (worker.tasksAssigned === 5) worker.available = false;
+      if (worker.tasksAssigned >= 5) worker.available = false;
       await worker.save();
 
       // AI Email content
@@ -47,8 +47,8 @@ exports.createComplaint = async (req, res) => {
       title,
       description,
       category,
-      studentId,
-      assignedWorker,
+      studentId: req.user.id,
+      assignedTo,
       status,
       image: imagePath
     });
@@ -76,19 +76,50 @@ exports.createComplaint = async (req, res) => {
   }
 };
 
-// 🔍 GET ALL COMPLAINTS
+// 🔍 GET ALL COMPLAINTS (ADMIN)
 exports.getAllComplaints = async (req, res) => {
   try {
     const complaints = await Complaint.find().sort({ createdAt: -1 });
-    res.status(200).json({
-      success: true,
-      data: { complaints }
-    });
+    res.json({ success: true, data: complaints });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 👨‍🎓 GET MY COMPLAINTS (STUDENT)
+exports.getMyComplaints = async (req, res) => {
+  try {
+    const complaints = await Complaint.find({ studentId: req.user.id }).sort({ createdAt: -1 });
+    res.json({ success: true, data: complaints });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 👷 GET ASSIGNED COMPLAINTS (WORKER)
+exports.getAssignedComplaints = async (req, res) => {
+  try {
+    const complaints = await Complaint.find({ assignedTo: req.user.id }).sort({ createdAt: -1 });
+    res.json({ success: true, data: complaints });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 🗑️ DELETE COMPLAINT (ADMIN)
+exports.deleteComplaint = async (req, res) => {
+  try {
+    const complaint = await Complaint.findById(req.params.id);
+
+    if (!complaint) {
+      return res.status(404).json({ success: false, message: "Complaint not found" });
+    }
+
+    await complaint.deleteOne();
+
+    res.json({ success: true, message: "Complaint deleted" });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
