@@ -1,8 +1,8 @@
 const express = require("express");
 const router = express.Router();
-const { submitFeedback } = require("../controllers/feedbackController");
+const { giveFeedback } = require("../controllers/feedbackController");
 
 // POST /api/feedback
-router.post("/", submitFeedback);
+router.post("/", giveFeedback);
 
 module.exports = router;

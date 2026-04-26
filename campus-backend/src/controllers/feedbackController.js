@@ -2,7 +2,7 @@ const Feedback = require("../models/Feedback");
 const Complaint = require("../models/Complaint");
 
 // 1. Post Feedback
-exports.postFeedback = async (req, res) => {
+exports.giveFeedback = async (req, res) => {
   try {
     const { complaintId, studentId, rating, feedback } = req.body;
 
