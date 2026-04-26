@@ -1,6 +1,8 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import Login from './pages/Login';
 import StudentDashboard from './pages/student/StudentDashboard';
+import StudentComplaints from './pages/student/StudentComplaints';
+import CreateComplaint from './pages/student/CreateComplaint';
 import WorkerDashboard from './pages/worker/WorkerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import ProtectedRoute from './components/ProtectedRoute';
@@ -17,6 +19,22 @@ function App() {
           element={
             <ProtectedRoute>
               <StudentDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/student/complaints" 
+          element={
+            <ProtectedRoute>
+              <StudentComplaints />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/student/create" 
+          element={
+            <ProtectedRoute>
+              <CreateComplaint />
             </ProtectedRoute>
           } 
         />

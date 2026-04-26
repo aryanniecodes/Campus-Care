@@ -33,7 +33,7 @@ const seedTestUsers = async () => {
     const testWorker = new Worker({
       workerId: "W101",
       name: "Test Worker",
-      email: "worker@test.com",
+      email: "aryaniecodes@gmail.com",
       role: "electrician",
       password: hashedPassword,
       available: true,

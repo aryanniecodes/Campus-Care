@@ -19,47 +19,62 @@ exports.createComplaint = async (req, res) => {
     // AI Classification
     const category = await classifyComplaint(title, description);
 
-    // Worker assignment
-    const worker = await Worker.findOne({
-      role: category,
-      available: true,
-      tasksAssigned: { $lt: 5 }
-    });
-
-    let assignedTo = null;
-    let status = "pending";
-
-    if (worker) {
-      assignedTo = worker._id;
-      status = "assigned";
-      worker.tasksAssigned += 1;
-      if (worker.tasksAssigned >= 5) worker.available = false;
-      await worker.save();
-
-      // AI Email content
-      const emailText = await generateEmail(title, category);
-      sendEmail(worker.email, "New task assigned", emailText);
-    }
-
     let imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
-    const newComplaint = new Complaint({
+    const complaint = new Complaint({
       title,
       description,
       category,
       studentId: req.user.id,
-      assignedTo,
-      status,
+      status: "pending",
       image: imagePath
     });
 
-    await newComplaint.save();
+    await complaint.save();
+
+    // Find ANY available worker
+    const worker = await Worker.findOne({ available: true });
+
+    console.log("FOUND WORKER:", worker);
+
+    if (worker) {
+      complaint.assignedTo = worker._id;
+      complaint.status = "assigned";
+
+      worker.tasksAssigned = (worker.tasksAssigned || 0) + 1;
+      if (worker.tasksAssigned >= 5) worker.available = false;
+
+      await worker.save();
+      await complaint.save();
+
+      console.log("ASSIGNING WORKER:", worker._id);
+
+      // Static Fallback Email
+      try {
+        const emailText = `
+New Complaint Assigned
+
+Title: ${complaint.title}
+Description: ${complaint.description}
+Priority: ${complaint.priority}
+
+Please check your dashboard.
+        `.trim();
+        
+        console.log("SENDING EMAIL TO:", worker.email);
+        sendEmail(worker.email, "New task assigned", emailText);
+      } catch (err) {
+        console.log("Email error:", err.message);
+      }
+    } else {
+      console.log("NO WORKER FOUND");
+    }
 
     res.status(201).json({
       success: true,
-      message: worker ? "Complaint created and assigned" : "No worker available",
+      message: worker ? "Complaint created and assigned" : "Complaint created but no worker available",
       data: {
-        complaint: newComplaint,
+        complaint,
         worker: worker ? {
           name: worker.name,
           role: worker.role,
@@ -99,7 +114,17 @@ exports.getMyComplaints = async (req, res) => {
 // 👷 GET ASSIGNED COMPLAINTS (WORKER)
 exports.getAssignedComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ assignedTo: req.user.id }).sort({ createdAt: -1 });
+    console.log("REQ.USER.ID:", req.user.id);
+
+    const allComplaints = await Complaint.find();
+    console.log("ALL COMPLAINTS:", allComplaints);
+
+    const complaints = await Complaint.find({
+      assignedTo: req.user.id.toString()
+    }).sort({ createdAt: -1 });
+
+    console.log("FILTERED COMPLAINTS:", complaints);
+
     res.json({ success: true, data: complaints });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
