@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 
 const StatCard = ({ label, value, color = "text-gray-900", icon }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:scale-105 transition-all duration-300">
@@ -46,6 +47,17 @@ const AdminDashboard = () => {
     fetchData();
   }, []);
 
+  if (loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex flex-col items-center justify-center h-[70vh] space-y-4">
+          <div className="w-12 h-12 border-4 border-blue-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-gray-500 font-bold animate-pulse uppercase tracking-widest text-xs">Initializing Dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this complaint?")) return;
     
@@ -63,98 +75,142 @@ const AdminDashboard = () => {
     ? [...workerStats].sort((a, b) => b.completed - a.completed)[0]
     : null;
 
+  const rankedWorkers = [...workerStats].sort((a, b) => b.completed - a.completed);
+
+  const chartData = [
+    { name: "Pending", value: analytics.pending },
+    { name: "Completed", value: analytics.completed }
+  ];
+
+  const COLORS = ["#facc15", "#22c55e"];
+
   return (
     <DashboardLayout>
-      <div className="animate-in fade-in duration-500">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
           <div>
-            <h2 className="text-3xl font-bold text-gray-900 font-outfit">Admin Analytics 📈</h2>
-            <p className="text-gray-500 mt-1">Real-time performance and system monitoring.</p>
+            <h2 className="text-4xl font-black text-gray-900 font-outfit tracking-tight">Admin Analytics 📈</h2>
+            <p className="text-gray-500 mt-1 font-medium">Real-time performance and system monitoring.</p>
           </div>
           {topWorker && (
-            <div className="bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-100 px-6 py-3 rounded-2xl flex items-center gap-4 shadow-sm animate-in slide-in-from-right duration-700">
-              <div className="bg-amber-400 text-white w-10 h-10 rounded-full flex items-center justify-center text-xl shadow-lg shadow-amber-200">
+            <div className="bg-white border border-amber-100 px-6 py-4 rounded-2xl flex items-center gap-4 shadow-xl shadow-amber-900/5 hover:scale-105 transition-all duration-500 cursor-default">
+              <div className="bg-gradient-to-br from-amber-400 to-orange-500 text-white w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-amber-200 rotate-3">
                 🏆
               </div>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-widest text-amber-600">Top Performer</p>
-                <p className="font-bold text-gray-900">{topWorker.name} <span className="text-amber-600 ml-2">({topWorker.completed} solved)</span></p>
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Leaderboard #1</p>
+                <p className="font-extrabold text-gray-900 text-lg">{topWorker.name}</p>
+                <p className="text-xs text-gray-400 font-bold">{topWorker.completed} resolutions</p>
               </div>
             </div>
           )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-          <StatCard label="Total Requests" value={loading ? "..." : analytics.total} icon="📋" />
-          <StatCard label="Pending" value={loading ? "..." : analytics.pending} color="text-yellow-500" icon="⏳" />
-          <StatCard label="Resolved" value={loading ? "..." : analytics.completed} color="text-green-600" icon="✅" />
-          <StatCard label="Student Rating" value={loading ? "..." : `${analytics.avgRating} / 5`} color="text-blue-600" icon="⭐" />
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+          <StatCard label="Total Requests" value={analytics.total} icon="📋" />
+          <StatCard label="Pending" value={analytics.pending} color="text-yellow-500" icon="⏳" />
+          <StatCard label="Resolved" value={analytics.completed} color="text-green-600" icon="✅" />
+          <StatCard label="Student Rating" value={`${analytics.avgRating} / 5`} color="text-blue-600" icon="⭐" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-          {/* Worker Performance Table */}
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h3 className="text-base font-semibold text-gray-700 mb-6 flex items-center gap-2">
-              👷 Worker Performance
-            </h3>
-            {loading ? (
-              <p className="text-sm text-gray-400 animate-pulse">Calculating stats...</p>
-            ) : (
-              <div className="space-y-4">
-                {workerStats.map(w => (
-                  <div key={w.id} className="flex justify-between items-center p-4 rounded-xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:shadow-md transition-all duration-300 group">
-                    <div>
-                      <p className="font-bold text-gray-900 text-sm group-hover:text-blue-600 transition-colors">{w.name}</p>
-                      <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest">ID: {w.id}</p>
-                    </div>
-                    <div className="flex items-center gap-6">
-                      <div className="text-center">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Active</p>
-                        <p className="text-sm font-bold text-gray-700">{w.tasksAssigned}</p>
-                      </div>
-                      <div className="text-center">
-                        <p className="text-[10px] text-gray-400 font-bold uppercase mb-0.5">Solved</p>
-                        <p className="text-sm font-bold text-green-600">{w.completed}</p>
-                      </div>
-                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider ${
-                        w.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
-                      }`}>
-                        {w.available ? "Free" : "Busy"}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+          {/* Pie Chart Card */}
+          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center hover:shadow-xl transition-all duration-500">
+            <h3 className="text-base font-bold text-gray-800 mb-4 self-start uppercase tracking-wider">📊 Resolution Split</h3>
+            <div className="w-full h-72">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={chartData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={70}
+                    outerRadius={95}
+                    paddingAngle={8}
+                    dataKey="value"
+                    stroke="none"
+                  >
+                    {chartData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip 
+                    contentStyle={{ borderRadius: '16px', border: 'none', boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1)', padding: '12px' }}
+                  />
+                  <Legend verticalAlign="bottom" height={36} iconType="circle" />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-            <h3 className="text-base font-semibold text-gray-700 mb-6">Recent Activity</h3>
-            {loading ? (
-              <p className="text-sm text-gray-400 animate-pulse">Fetching updates...</p>
-            ) : complaints.length === 0 ? (
-              <div className="text-center py-8">
-                <p className="text-gray-400 text-sm">No activity recorded.</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {complaints.slice(0, 5).map(c => (
-                  <div key={c._id} className="p-4 rounded-xl border border-gray-50 hover:bg-gray-50 transition-all duration-200 flex justify-between items-center group">
+          {/* Worker Performance Ranking */}
+          <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl transition-all duration-500">
+            <h3 className="text-base font-bold text-gray-800 mb-8 flex items-center gap-2 uppercase tracking-wider">
+              🏅 Worker Leaderboard
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+              {rankedWorkers.map((w, index) => (
+                <div key={w.id} className="flex justify-between items-center p-5 rounded-2xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+                  <div className="flex items-center gap-5">
+                    <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shadow-sm ${
+                      index === 0 ? "bg-amber-100 text-amber-600 rotate-3" : 
+                      index === 1 ? "bg-slate-100 text-slate-600 -rotate-3" :
+                      index === 2 ? "bg-orange-100 text-orange-600 rotate-2" : "bg-white text-gray-400"
+                    }`}>
+                      #{index + 1}
+                    </span>
                     <div>
-                      <p className="font-medium text-gray-900 group-hover:text-blue-600 transition-colors">{c.title}</p>
-                      <p className="text-xs text-gray-500 mt-1 capitalize">{c.category} • {c.priority}</p>
+                      <p className="font-extrabold text-gray-900 group-hover:text-blue-600 transition-colors">{w.name}</p>
+                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-0.5">Worker ID: {w.id}</p>
                     </div>
-                    <button 
-                      onClick={() => handleDelete(c._id)}
-                      className="text-red-500 hover:text-red-700 text-xs font-bold transition-all px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer"
-                    >
-                      Delete
-                    </button>
                   </div>
-                ))}
-              </div>
-            )}
+                  <div className="flex items-center gap-6">
+                    <div className="text-right">
+                      <p className="text-[10px] text-gray-400 font-black uppercase mb-0.5">Success</p>
+                      <p className="font-black text-green-600">{w.completed}</p>
+                    </div>
+                    <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${
+                      w.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                    }`}>
+                      {w.available ? "Free" : "Busy"}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
+        </div>
+
+        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl transition-all duration-500">
+          <h3 className="text-base font-bold text-gray-800 mb-8 uppercase tracking-wider">Recent Activity Flow</h3>
+          {complaints.length === 0 ? (
+            <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+              <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No activity flow recorded yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {complaints.slice(0, 6).map(c => (
+                <div key={c._id} className="p-5 rounded-2xl border border-gray-50 bg-gray-50/20 hover:bg-white hover:shadow-xl hover:scale-[1.03] transition-all duration-300 flex justify-between items-center group">
+                  <div>
+                    <p className="font-black text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-[180px]">{c.title}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{c.category}</span>
+                      <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
+                      <span className={`text-[10px] font-black uppercase tracking-widest ${
+                        c.priority === "high" ? "text-red-500" : "text-blue-500"
+                      }`}>{c.priority}</span>
+                    </div>
+                  </div>
+                  <button 
+                    onClick={() => handleDelete(c._id)}
+                    className="text-red-500 hover:text-white hover:bg-red-500 text-[10px] font-black uppercase tracking-widest transition-all px-4 py-2 bg-red-50 rounded-xl cursor-pointer shadow-sm active:scale-90"
+                  >
+                    Remove
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>
