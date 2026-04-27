@@ -47,7 +47,7 @@ const WorkerDashboard = () => {
     const fetchTasks = async () => {
       try {
         const res = await api.get("/complaints/assigned");
-        setTasks(res.data.data || res.data);
+        setTasks(res.data.data);
       } catch (error) {
         console.log("Error fetching assigned tasks:", error);
         toast.error("Failed to load tasks");

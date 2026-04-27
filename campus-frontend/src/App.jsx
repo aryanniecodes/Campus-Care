@@ -17,7 +17,7 @@ function App() {
       <Routes>
         <Route path="/" element={<Login />} />
         
-        {/* Protected Routes */}
+        {/* Student Routes */}
         <Route 
           path="/student" 
           element={
@@ -43,6 +43,7 @@ function App() {
           } 
         />
         
+        {/* Worker Routes */}
         <Route 
           path="/worker" 
           element={
@@ -52,6 +53,7 @@ function App() {
           } 
         />
         
+        {/* Admin Routes */}
         <Route 
           path="/admin" 
           element={
@@ -60,7 +62,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-
         <Route 
           path="/admin/feedback" 
           element={
@@ -69,7 +70,6 @@ function App() {
             </ProtectedRoute>
           } 
         />
-
         <Route 
           path="/admin/complaints" 
           element={

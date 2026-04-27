@@ -33,9 +33,20 @@ const AdminDashboard = () => {
           api.get("/workers/stats")
         ]);
         
-        setComplaints(complaintsRes.data.data);
-        setAnalytics(analyticsRes.data.data);
-        setWorkerStats(workerStatsRes.data.data);
+        setComplaints(complaintsRes.data?.data || []);
+        
+        if (analyticsRes.data && analyticsRes.data.data) {
+          setAnalytics(analyticsRes.data.data);
+        } else {
+          setAnalytics({ total: 0, completed: 0, pending: 0, avgRating: 0 });
+        }
+        
+        setWorkerStats(workerStatsRes.data?.data || []);
+        console.log("ADMIN DATA:", {
+          complaints: complaintsRes.data?.data,
+          analytics: analyticsRes.data?.data,
+          workers: workerStatsRes.data?.data
+        });
       } catch (error) {
         console.log("Error fetching dashboard data:", error);
         toast.error("Failed to load dashboard analytics");
@@ -57,6 +68,8 @@ const AdminDashboard = () => {
       </DashboardLayout>
     );
   }
+
+  if (!analytics) return <p>Loading...</p>;
 
   const handleDelete = async (id) => {
     if (!window.confirm("Are you sure you want to delete this complaint?")) return;
@@ -109,7 +122,7 @@ const AdminDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <StatCard label="Total Requests" value={analytics.total} icon="📋" />
           <StatCard label="Pending" value={analytics.pending} color="text-yellow-500" icon="⏳" />
-          <StatCard label="Resolved" value={analytics.completed} color="text-green-600" icon="✅" />
+          <StatCard label="Completed" value={analytics.completed} color="text-green-600" icon="✅" />
           <StatCard label="Student Rating" value={`${analytics.avgRating} / 5`} color="text-blue-600" icon="⭐" />
         </div>
 

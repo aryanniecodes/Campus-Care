@@ -52,7 +52,7 @@ const StudentDashboard = () => {
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
           <StatCard label="Total Complaints" value={stats.total} />
           <StatCard label="In Progress" value={stats.pending} color="text-blue-600" />
-          <StatCard label="Resolved" value={stats.completed} color="text-green-600" />
+          <StatCard label="Completed" value={stats.completed} color="text-green-600" />
         </div>
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">

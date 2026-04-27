@@ -1,39 +1,40 @@
 const Complaint = require("../models/Complaint");
 const Worker = require("../models/Worker");
 
-// 1. Get All Complaints
-exports.getAllComplaints = async (req, res) => {
+// GET ALL WORKERS (Admin)
+exports.getAllWorkers = async (req, res) => {
   try {
-    const complaints = await Complaint.find()
-      .select("title description category status assignedWorker createdAt")
-      .sort({ createdAt: -1 });
-
-    res.status(200).json({
-      success: true,
-      data: { complaints }
-    });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    const workers = await Worker.find().select("-password");
+    res.json({ success: true, data: workers });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };
 
-// 2. Get All Workers
-exports.getAllWorkers = async (req, res) => {
+// GET ALL COMPLAINTS (Admin - legacy route)
+exports.getAllComplaints = async (req, res) => {
   try {
-    const workers = await Worker.find()
-      .select("name role tasksAssigned available");
+    const complaints = await Complaint.find()
+      .populate("assignedTo", "name workerId")
+      .sort({ createdAt: -1 });
+    res.json({ success: true, data: complaints });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
+};
 
-    res.status(200).json({
+// GET DASHBOARD STATS (Admin)
+exports.getDashboardStats = async (req, res) => {
+  try {
+    const total = await Complaint.countDocuments();
+    const pending = await Complaint.countDocuments({ status: "pending" });
+    const completed = await Complaint.countDocuments({ status: "completed" });
+
+    res.json({
       success: true,
-      data: { workers }
+      data: { total, pending, completed }
     });
-  } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
   }
 };

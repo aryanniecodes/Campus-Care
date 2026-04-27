@@ -1,8 +1,10 @@
 const express = require("express");
 const router = express.Router();
-const { getAllComplaints, getAllWorkers } = require("../controllers/adminController");
+const { getAllComplaints, getAllWorkers, getDashboardStats } = require("../controllers/adminController");
+const { protect } = require("../middlewares/authMiddleware");
 
-router.get("/complaints", getAllComplaints);
-router.get("/workers", getAllWorkers);
+router.get("/complaints", protect, getAllComplaints);
+router.get("/workers", protect, getAllWorkers);
+router.get("/stats", protect, getDashboardStats);
 
 module.exports = router;

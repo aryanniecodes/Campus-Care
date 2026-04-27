@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
+import toast from "react-hot-toast";
 
 const CreateComplaint = () => {
   const navigate = useNavigate();
@@ -46,14 +47,14 @@ const CreateComplaint = () => {
         },
       });
 
-      console.log("Complaint submitted");
+      toast.success("Complaint submitted successfully");
       navigate("/student/complaints");
     } catch (error) {
       console.log("FULL ERROR OBJECT:", error);
       console.log("STATUS:", error.response?.status);
       console.log("ERROR RESPONSE:", error.response?.data);
 
-      alert("Failed to submit complaint. Please try again.");
+      toast.error("Failed to submit complaint. Please try again.");
     } finally {
       setLoading(false);
     }

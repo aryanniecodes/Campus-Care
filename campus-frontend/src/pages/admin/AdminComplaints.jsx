@@ -16,8 +16,13 @@ const AdminComplaints = () => {
         api.get("/complaints/all"),
         api.get("/workers/all")
       ]);
-      setComplaints(complaintsRes.data.data);
-      setWorkers(workersRes.data.data);
+      if (complaintsRes.data && complaintsRes.data.data) {
+        setComplaints(complaintsRes.data.data);
+      } else {
+        setComplaints([]);
+      }
+      setWorkers(workersRes.data?.data || []);
+      console.log("ADMIN COMPLAINTS:", complaintsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
       toast.error("Failed to load complaints");
@@ -76,6 +81,8 @@ const AdminComplaints = () => {
     return c.status === filter;
   });
 
+  if (!complaints) return <p>Loading...</p>;
+
   return (
     <DashboardLayout>
       <div className="animate-in fade-in duration-500">
@@ -116,15 +123,15 @@ const AdminComplaints = () => {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {filteredComplaints.map((c) => (
+            {Array.isArray(filteredComplaints) && filteredComplaints.map((c) => (
               <div key={c._id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-6 hover:shadow-lg transition-all duration-300 group">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
                     <h4 className="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">{c.title}</h4>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
-                      c.status === "completed" ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"
+                      c?.status === "completed" ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"
                     }`}>
-                      {c.status}
+                      {c?.status || "pending"}
                     </span>
                   </div>
                   <p className="text-gray-600 text-sm mb-4 leading-relaxed">{c.description}</p>

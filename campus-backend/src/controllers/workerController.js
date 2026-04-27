@@ -82,7 +82,7 @@ exports.completeTask = async (req, res) => {
 
     if (student) {
       const message = `
-Your complaint has been resolved
+Your complaint has been completed
 
 Title: ${complaint.title}
 Status: Completed
@@ -90,10 +90,10 @@ Status: Completed
 Thank you for your patience.
       `;
 
-      const testEmail = "2k25cse2511053@gmail.com";
+      const testEmail = "aryanicodes@gmail.com";
       if (process.env.ENABLE_EMAIL === "true") {
         console.log("SENDING COMPLETION EMAIL TO:", testEmail);
-        await sendEmail(testEmail, "Complaint Resolved", message);
+        await sendEmail(testEmail, "Complaint Completed", message);
       } else {
         console.log("EMAIL DISABLED (DEV MODE)");
       }
