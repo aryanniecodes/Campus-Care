@@ -9,7 +9,9 @@ const {
   giveFeedback,
   getComplaintsByStatus,
   getDashboardSummary,
-  getAllFeedback
+  getAllFeedback,
+  assignWorker,
+  updateStatus
 } = require("../controllers/complaintController");
 const upload = require("../middlewares/upload");
 const { protect } = require("../middlewares/authMiddleware");
@@ -40,5 +42,9 @@ router.put("/feedback/:id", protect, giveFeedback);
 
 // GET /api/complaints/feedback (Admin)
 router.get("/feedback", protect, getAllFeedback);
+
+// Admin Management
+router.post("/assign", protect, assignWorker);
+router.put("/status/:id", protect, updateStatus);
 
 module.exports = router;

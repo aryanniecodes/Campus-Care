@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
@@ -11,20 +12,24 @@ const StatCard = ({ label, value, color = "text-gray-900" }) => (
 );
 
 const AdminDashboard = () => {
+  const navigate = useNavigate();
   const [complaints, setComplaints] = useState([]);
   const [workers, setWorkers] = useState([]);
+  const [feedback, setFeedback] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [complaintsRes, workersRes] = await Promise.all([
+        const [complaintsRes, workersRes, feedbackRes] = await Promise.all([
           api.get("/complaints/all"),
-          api.get("/workers/all")
+          api.get("/workers/all"),
+          api.get("/complaints/feedback")
         ]);
         
         setComplaints(complaintsRes.data.data);
         setWorkers(workersRes.data.data);
+        setFeedback(feedbackRes.data.data);
       } catch (error) {
         console.log("Error fetching dashboard data:", error);
         toast.error("Failed to load dashboard data");
@@ -52,9 +57,11 @@ const AdminDashboard = () => {
   return (
     <DashboardLayout>
       <div className="animate-in fade-in duration-500">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 font-outfit">Admin Overview 🛡️</h2>
-          <p className="text-gray-500 mt-1">System-wide complaint and worker management.</p>
+        <div className="flex justify-between items-center mb-8">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 font-outfit">Admin Overview 🛡️</h2>
+            <p className="text-gray-500 mt-1">System-wide complaint and worker management.</p>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
@@ -64,7 +71,7 @@ const AdminDashboard = () => {
           <StatCard label="Total Workers" value={loading ? "..." : workers.length} color="text-blue-600" />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
             <h3 className="text-base font-semibold text-gray-700 mb-4">Recent Complaints</h3>
             {loading ? (
@@ -123,6 +130,43 @@ const AdminDashboard = () => {
               </div>
             )}
           </div>
+        </div>
+
+        {/* Recent Feedback Section */}
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 mb-6">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="text-base font-semibold text-gray-700">Recent User Feedback</h3>
+            <button 
+              onClick={() => navigate("/admin/feedback")}
+              className="text-blue-600 hover:text-blue-700 text-sm font-bold transition-colors cursor-pointer"
+            >
+              View All →
+            </button>
+          </div>
+          
+          {loading ? (
+            <p className="text-sm text-gray-400">Loading feedback...</p>
+          ) : feedback.length === 0 ? (
+            <div className="text-center py-8 bg-gray-50 rounded-xl border border-dashed border-gray-200">
+              <p className="text-gray-400 text-sm font-medium">No feedback received yet.</p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {feedback.slice(0, 3).map((item) => (
+                <div key={item._id} className="p-4 rounded-xl border border-gray-100 bg-gray-50/30 hover:bg-white hover:shadow-md transition-all duration-300">
+                  <div className="flex justify-between items-start mb-2">
+                    <p className="font-bold text-gray-900 text-sm truncate pr-2" title={item.title}>{item.title}</p>
+                    <div className="flex items-center gap-0.5 bg-orange-100 px-2 py-0.5 rounded text-orange-600 font-black text-[10px]">
+                      {item.rating}<span>★</span>
+                    </div>
+                  </div>
+                  <p className="text-xs text-gray-500 leading-relaxed italic">
+                    "{item.feedback ? (item.feedback.length > 80 ? `${item.feedback.substring(0, 80)}...` : item.feedback) : "No comment provided."}"
+                  </p>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </DashboardLayout>

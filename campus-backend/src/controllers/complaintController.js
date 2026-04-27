@@ -98,6 +98,9 @@ Please check your dashboard.
 // 🔍 GET ALL COMPLAINTS (ADMIN)
 exports.getAllComplaints = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin only" });
+    }
     const complaints = await Complaint.find().sort({ createdAt: -1 });
     res.json({ success: true, data: complaints });
   } catch (error) {
@@ -131,10 +134,25 @@ exports.getAssignedComplaints = async (req, res) => {
 // 🗑️ DELETE COMPLAINT (ADMIN)
 exports.deleteComplaint = async (req, res) => {
   try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin only" });
+    }
+
     const complaint = await Complaint.findById(req.params.id);
 
     if (!complaint) {
       return res.status(404).json({ success: false, message: "Complaint not found" });
+    }
+
+    // If assigned to a worker, decrease their task count
+    if (complaint.assignedTo) {
+      const worker = await Worker.findById(complaint.assignedTo);
+      if (worker) {
+        worker.tasksAssigned = Math.max(0, (worker.tasksAssigned || 0) - 1);
+        if (worker.tasksAssigned < 5) worker.available = true;
+        await worker.save();
+        console.log("Reduced tasks for worker on deletion:", worker._id);
+      }
     }
 
     await complaint.deleteOne();
@@ -228,5 +246,80 @@ exports.getAllFeedback = async (req, res) => {
 
   } catch (error) {
     res.status(500).json({ message: error.message });
+  }
+};
+
+// 🏗️ ASSIGN WORKER (ADMIN)
+exports.assignWorker = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin only" });
+    }
+
+    const { complaintId, workerId } = req.body;
+
+    const complaint = await Complaint.findById(complaintId);
+    if (!complaint) return res.status(404).json({ success: false, message: "Complaint not found" });
+
+    // 1. If already has a worker, decrease their count
+    if (complaint.assignedTo) {
+      const oldWorker = await Worker.findById(complaint.assignedTo);
+      if (oldWorker) {
+        oldWorker.tasksAssigned = Math.max(0, (oldWorker.tasksAssigned || 0) - 1);
+        if (oldWorker.tasksAssigned < 5) oldWorker.available = true;
+        await oldWorker.save();
+      }
+    }
+
+    // 2. Assign to new worker
+    const newWorker = await Worker.findById(workerId);
+    if (!newWorker) return res.status(404).json({ success: false, message: "Worker not found" });
+
+    console.log("Assigning worker:", newWorker._id);
+
+    complaint.assignedTo = workerId;
+    complaint.status = "assigned";
+    await complaint.save();
+
+    newWorker.tasksAssigned = (newWorker.tasksAssigned || 0) + 1;
+    if (newWorker.tasksAssigned >= 5) newWorker.available = false;
+    await newWorker.save();
+
+    res.json({ success: true, message: "Worker assigned successfully", data: complaint });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 🏗️ UPDATE STATUS (ADMIN)
+exports.updateStatus = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin only" });
+    }
+
+    const { status } = req.body;
+    const complaint = await Complaint.findById(req.params.id);
+    
+    if (!complaint) return res.status(404).json({ success: false, message: "Complaint not found" });
+
+    // If marking as completed, handle worker tasks
+    if (status === "completed" && complaint.status !== "completed") {
+      if (complaint.assignedTo) {
+        const worker = await Worker.findById(complaint.assignedTo);
+        if (worker) {
+          worker.tasksAssigned = Math.max(0, (worker.tasksAssigned || 0) - 1);
+          if (worker.tasksAssigned < 5) worker.available = true;
+          await worker.save();
+        }
+      }
+    }
+
+    complaint.status = status;
+    await complaint.save();
+
+    res.json({ success: true, message: "Status updated successfully", data: complaint });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

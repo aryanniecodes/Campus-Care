@@ -6,6 +6,7 @@ import CreateComplaint from './pages/student/CreateComplaint';
 import WorkerDashboard from './pages/worker/WorkerDashboard';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminFeedback from './pages/admin/AdminFeedback';
+import AdminComplaints from './pages/admin/AdminComplaints';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from 'react-hot-toast';
 
@@ -65,6 +66,15 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminFeedback />
+            </ProtectedRoute>
+          } 
+        />
+
+        <Route 
+          path="/admin/complaints" 
+          element={
+            <ProtectedRoute>
+              <AdminComplaints />
             </ProtectedRoute>
           } 
         />

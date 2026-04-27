@@ -15,6 +15,7 @@ const DashboardLayout = ({ children }) => {
     ],
     admin: [
       { label: "📊 Dashboard", path: "/admin" },
+      { label: "📋 Manage Complaints", path: "/admin/complaints" },
       { label: "⭐ Feedback", path: "/admin/feedback" },
     ],
   };
