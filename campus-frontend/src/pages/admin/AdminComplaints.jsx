@@ -7,6 +7,7 @@ const AdminComplaints = () => {
   const [complaints, setComplaints] = useState([]);
   const [workers, setWorkers] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState("all");
   const [actionLoading, setActionLoading] = useState(null);
 
   const fetchData = async () => {
@@ -70,29 +71,52 @@ const AdminComplaints = () => {
     }
   };
 
+  const filteredComplaints = complaints.filter(c => {
+    if (filter === "all") return true;
+    return c.status === filter;
+  });
+
   return (
     <DashboardLayout>
       <div className="animate-in fade-in duration-500">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900 font-outfit">Manage Complaints 📋</h2>
-          <p className="text-gray-500 mt-1">Review, assign, and resolve student maintenance requests.</p>
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+          <div>
+            <h2 className="text-3xl font-bold text-gray-900 font-outfit">Manage Complaints 📋</h2>
+            <p className="text-gray-500 mt-1">Review, assign, and resolve student maintenance requests.</p>
+          </div>
+          
+          <div className="flex bg-white p-1 rounded-xl shadow-sm border border-gray-100">
+            {["all", "pending", "completed"].map((f) => (
+              <button
+                key={f}
+                onClick={() => setFilter(f)}
+                className={`px-6 py-2 rounded-lg text-xs font-bold uppercase tracking-widest transition-all cursor-pointer ${
+                  filter === f 
+                  ? "bg-blue-600 text-white shadow-lg shadow-blue-900/20" 
+                  : "text-gray-400 hover:text-gray-600"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
         </div>
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
             <p className="text-gray-500 font-medium animate-pulse text-lg">Loading complaints...</p>
           </div>
-        ) : complaints.length === 0 ? (
+        ) : filteredComplaints.length === 0 ? (
           <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center animate-in zoom-in duration-300">
             <div className="bg-blue-50 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
               <span className="text-3xl text-blue-400">📋</span>
             </div>
-            <p className="text-gray-500 font-bold text-xl">No complaints yet</p>
+            <p className="text-gray-500 font-bold text-xl uppercase tracking-tight">No {filter} complaints</p>
             <p className="text-gray-400 mt-2">New student requests will appear here.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-6">
-            {complaints.map((c) => (
+            {filteredComplaints.map((c) => (
               <div key={c._id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-6 hover:shadow-lg transition-all duration-300 group">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
@@ -108,8 +132,11 @@ const AdminComplaints = () => {
                   <div className="flex flex-wrap gap-4 text-xs font-bold uppercase tracking-wider text-gray-400">
                     <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Category: {c.category}</span>
                     <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Priority: {c.priority}</span>
-                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">
-                      Assigned To: {workers.find(w => w._id === c.assignedTo)?.name || "Unassigned"}
+                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100 flex items-center gap-2">
+                      Assigned To: 
+                      <span className={c.assignedTo ? "text-blue-600" : "text-orange-500"}>
+                        {c.assignedTo?.name || "Unassigned"}
+                      </span>
                     </span>
                   </div>
                 </div>
@@ -123,7 +150,7 @@ const AdminComplaints = () => {
                         disabled={actionLoading === c._id}
                         defaultValue=""
                       >
-                        <option value="" disabled>Assign Worker...</option>
+                        <option value="" disabled>Reassign Worker...</option>
                         {workers.map(w => (
                           <option key={w._id} value={w._id}>{w.name} ({w.tasksAssigned} tasks)</option>
                         ))}

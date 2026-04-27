@@ -39,7 +39,7 @@ exports.createComplaint = async (req, res) => {
 
     if (worker) {
       complaint.assignedTo = worker._id;
-      complaint.status = "assigned";
+      complaint.status = "pending";
 
       worker.tasksAssigned = (worker.tasksAssigned || 0) + 1;
       if (worker.tasksAssigned >= 5) worker.available = false;
@@ -101,7 +101,9 @@ exports.getAllComplaints = async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Admin only" });
     }
-    const complaints = await Complaint.find().sort({ createdAt: -1 });
+    const complaints = await Complaint.find()
+      .populate("assignedTo", "name workerId")
+      .sort({ createdAt: -1 });
     res.json({ success: true, data: complaints });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -278,7 +280,7 @@ exports.assignWorker = async (req, res) => {
     console.log("Assigning worker:", newWorker._id);
 
     complaint.assignedTo = workerId;
-    complaint.status = "assigned";
+    complaint.status = "pending";
     await complaint.save();
 
     newWorker.tasksAssigned = (newWorker.tasksAssigned || 0) + 1;
@@ -321,5 +323,39 @@ exports.updateStatus = async (req, res) => {
     res.json({ success: true, message: "Status updated successfully", data: complaint });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 📊 GET ANALYTICS (ADMIN)
+exports.getAnalytics = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin only" });
+    }
+
+    const total = await Complaint.countDocuments();
+    const completed = await Complaint.countDocuments({ status: "completed" });
+    const pending = await Complaint.countDocuments({ status: "pending" });
+
+    console.log("ANALYTICS:", { total, completed, pending });
+
+    const ratings = await Complaint.find({ rating: { $exists: true, $ne: null } });
+
+    const avgRating =
+      ratings.length > 0
+        ? ratings.reduce((sum, c) => sum + c.rating, 0) / ratings.length
+        : 0;
+
+    res.json({
+      success: true,
+      data: {
+        total,
+        completed,
+        pending,
+        avgRating: Number(avgRating.toFixed(1))
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

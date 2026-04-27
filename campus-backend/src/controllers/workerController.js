@@ -147,3 +147,39 @@ exports.getAllWorkers = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
+// 📊 GET WORKER STATS (ADMIN)
+exports.getWorkerStats = async (req, res) => {
+  try {
+    if (req.user.role !== "admin") {
+      return res.status(403).json({ message: "Admin only" });
+    }
+
+    const workers = await Worker.find();
+
+    const data = await Promise.all(
+      workers.map(async (w) => {
+        const completed = await Complaint.countDocuments({
+          assignedTo: w._id,
+          status: "completed"
+        });
+
+        return {
+          id: w.workerId,
+          name: w.name,
+          tasksAssigned: w.tasksAssigned,
+          completed,
+          available: w.available
+        };
+      })
+    );
+
+    res.json({
+      success: true,
+      data
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
