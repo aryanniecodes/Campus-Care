@@ -22,7 +22,7 @@ app.use("/uploads", express.static("uploads"));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/complaints", complaintRoutes);
-app.use("/api/worker", workerRoutes);
+app.use("/api/workers", workerRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin", adminRoutes);
 

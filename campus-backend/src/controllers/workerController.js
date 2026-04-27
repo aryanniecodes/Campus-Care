@@ -18,7 +18,11 @@ exports.getWorkerMe = async (req, res) => {
 
     res.status(200).json({ 
       success: true, 
-      data: { ...worker.toObject(), completedTasks } 
+      data: { 
+        ...worker.toObject(), 
+        completedTasks,
+        assignedTasks: worker.tasksAssigned 
+      } 
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -87,13 +91,12 @@ Thank you for your patience.
       `;
 
       const testEmail = "2k25cse2511053@gmail.com";
-      console.log("SENDING COMPLETION EMAIL TO:", testEmail);
-
-      await sendEmail(
-        testEmail,
-        "Complaint Resolved",
-        message
-      );
+      if (process.env.ENABLE_EMAIL === "true") {
+        console.log("SENDING COMPLETION EMAIL TO:", testEmail);
+        await sendEmail(testEmail, "Complaint Resolved", message);
+      } else {
+        console.log("EMAIL DISABLED (DEV MODE)");
+      }
     }
 
     res.json({ success: true, message: "Task marked as completed" });
@@ -127,5 +130,20 @@ exports.toggleAvailability = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+// 4. Get All Workers (Admin)
+exports.getAllWorkers = async (req, res) => {
+  try {
+    const workers = await Worker.find().select("-password");
+
+    res.json({
+      success: true,
+      data: workers
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

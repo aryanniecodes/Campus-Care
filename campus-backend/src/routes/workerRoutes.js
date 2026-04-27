@@ -1,11 +1,12 @@
 const express = require("express");
 const router = express.Router();
-const { getWorkerTasks, completeTask, toggleAvailability, getWorkerMe } = require("../controllers/workerController");
+const { getWorkerTasks, completeTask, toggleAvailability, getWorkerMe, getAllWorkers } = require("../controllers/workerController");
 const { protect } = require("../middlewares/authMiddleware");
 
 router.get("/me", protect, getWorkerMe);
-router.get("/tasks/:workerId", getWorkerTasks);
+router.get("/all", protect, getAllWorkers);
+router.get("/tasks/:workerId", protect, getWorkerTasks);
 router.put("/complete/:id", protect, completeTask);
-router.patch("/availability/:workerId", toggleAvailability);
+router.patch("/availability/:workerId", protect, toggleAvailability);
 
 module.exports = router;

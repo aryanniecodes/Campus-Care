@@ -21,14 +21,14 @@ const StudentDashboard = () => {
   const fetchData = async () => {
     try {
       const res = await api.get("/complaints/my");
-      const data = res.data.data || res.data;
+      const data = res.data.data;
       
       setComplaints(data);
       
       setStats({
         total: data.length,
-        pending: data.filter(c => c.status !== "resolved" && c.status !== "completed").length,
-        completed: data.filter(c => c.status === "resolved" || c.status === "completed").length
+        pending: data.filter(c => c.status !== "completed").length,
+        completed: data.filter(c => c.status === "completed").length
       });
     } catch (error) {
       console.log("Error fetching dashboard data:", error);
@@ -68,7 +68,7 @@ const StudentDashboard = () => {
                   <p className="font-medium text-gray-900">{c.title}</p>
                   <p className="text-sm text-gray-600 mt-1 truncate">{c.description}</p>
                   <p className="text-xs text-gray-500 mt-2 font-semibold uppercase tracking-wide">
-                    <span className={c.status === "resolved" || c.status === "completed" ? "text-green-600" : "text-yellow-600"}>
+                    <span className={c.status === "completed" ? "text-green-600" : "text-yellow-600"}>
                       {c.status}
                     </span>
                     <span className="mx-2 text-gray-300">|</span>

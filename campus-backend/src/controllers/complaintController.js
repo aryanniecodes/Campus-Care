@@ -61,8 +61,12 @@ Priority: ${complaint.priority}
 Please check your dashboard.
         `.trim();
         
-        console.log("SENDING EMAIL TO:", worker.email);
-        sendEmail(worker.email, "New task assigned", emailText);
+        if (process.env.ENABLE_EMAIL === "true") {
+          console.log("SENDING EMAIL TO:", worker.email);
+          await sendEmail(worker.email, "New task assigned", emailText);
+        } else {
+          console.log("EMAIL DISABLED (DEV MODE)");
+        }
       } catch (err) {
         console.log("Email error:", err.message);
       }
@@ -114,16 +118,9 @@ exports.getMyComplaints = async (req, res) => {
 // 👷 GET ASSIGNED COMPLAINTS (WORKER)
 exports.getAssignedComplaints = async (req, res) => {
   try {
-    console.log("REQ.USER.ID:", req.user.id);
-
-    const allComplaints = await Complaint.find();
-    console.log("ALL COMPLAINTS:", allComplaints);
-
     const complaints = await Complaint.find({
       assignedTo: req.user.id.toString()
     }).sort({ createdAt: -1 });
-
-    console.log("FILTERED COMPLAINTS:", complaints);
 
     res.json({ success: true, data: complaints });
   } catch (error) {
@@ -151,30 +148,33 @@ exports.deleteComplaint = async (req, res) => {
 // 📝 GIVE FEEDBACK
 exports.giveFeedback = async (req, res) => {
   try {
-    const { complaintId } = req.params;
-    const { rating, feedback, isApproved } = req.body;
+    const { rating, feedback } = req.body;
 
-    const complaint = await Complaint.findById(complaintId);
+    const complaint = await Complaint.findById(req.params.id);
+
     if (!complaint) {
-      return res.status(404).json({ success: false, message: "Complaint not found" });
+      return res.status(404).json({ message: "Complaint not found" });
     }
 
-    if (rating !== undefined) complaint.rating = rating;
-    if (feedback !== undefined) complaint.feedback = feedback;
-    if (isApproved !== undefined) complaint.isApproved = isApproved;
+    if (complaint.status !== "completed") {
+      return res.status(400).json({
+        message: "Cannot give feedback before completion"
+      });
+    }
+
+    complaint.rating = rating;
+    complaint.feedback = feedback;
 
     await complaint.save();
 
-    res.status(200).json({
+    res.json({
       success: true,
-      message: "Feedback submitted",
-      data: { complaint }
+      message: "Feedback submitted successfully"
     });
+
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    console.log(error);
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -195,7 +195,7 @@ exports.getComplaintsByStatus = async (req, res) => {
   }
 };
 
-// 📈 DASHBOARD SUMMARY
+// 📊 DASHBOARD SUMMARY
 exports.getDashboardSummary = async (req, res) => {
   try {
     const total = await Complaint.countDocuments();
@@ -211,5 +211,22 @@ exports.getDashboardSummary = async (req, res) => {
       success: false,
       message: error.message
     });
+  }
+};
+
+// ⭐ GET ALL FEEDBACK (ADMIN)
+exports.getAllFeedback = async (req, res) => {
+  try {
+    const complaints = await Complaint.find({
+      rating: { $exists: true, $ne: null }
+    }).sort({ createdAt: -1 });
+
+    res.json({
+      success: true,
+      data: complaints
+    });
+
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };

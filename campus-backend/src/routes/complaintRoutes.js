@@ -8,7 +8,8 @@ const {
   deleteComplaint,
   giveFeedback,
   getComplaintsByStatus,
-  getDashboardSummary
+  getDashboardSummary,
+  getAllFeedback
 } = require("../controllers/complaintController");
 const upload = require("../middlewares/upload");
 const { protect } = require("../middlewares/authMiddleware");
@@ -34,7 +35,10 @@ router.get("/summary", getDashboardSummary);
 // GET /api/complaints/status/:status
 router.get("/status/:status", getComplaintsByStatus);
 
-// PUT /api/complaints/feedback/:complaintId
-router.put("/feedback/:complaintId", giveFeedback);
+// PUT /api/complaints/feedback/:id
+router.put("/feedback/:id", protect, giveFeedback);
+
+// GET /api/complaints/feedback (Admin)
+router.get("/feedback", protect, getAllFeedback);
 
 module.exports = router;

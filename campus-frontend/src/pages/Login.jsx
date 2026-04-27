@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../services/api";
+import toast from "react-hot-toast";
 
 const Login = () => {
   const [id, setId] = useState("");
@@ -29,6 +30,8 @@ const Login = () => {
         localStorage.setItem("token", response.data.data.token);
         localStorage.setItem("role", response.data.data.role);
 
+        toast.success("Welcome back! Login successful.");
+
         // Redirect based on role
         if (response.data.data.role === "student") navigate("/student");
         else if (response.data.data.role === "worker") navigate("/worker");
@@ -36,7 +39,7 @@ const Login = () => {
       }
     } catch (error) {
       console.error("Login Error:", error);
-      alert(error.response?.data?.message || "Login failed. Please check your credentials.");
+      toast.error(error.response?.data?.message || "Login failed. Check your credentials.");
     } finally {
       setIsLoading(false);
     }
@@ -44,19 +47,19 @@ const Login = () => {
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">CampusCare</h2>
-          <p className="text-gray-500 mt-2">Sign in to your account</p>
+      <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 animate-in fade-in zoom-in duration-500">
+        <div className="text-center mb-10">
+          <h2 className="text-4xl font-black text-blue-600 tracking-tight">CampusCare</h2>
+          <p className="text-gray-400 mt-2 font-medium">Elevating University Maintenance</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
           <div>
-            <label className="block text-sm font-medium text-gray-700">Role</label>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Your Role</label>
             <select
               value={role}
               onChange={(e) => setRole(e.target.value)}
-              className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md border"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all cursor-pointer font-medium text-gray-700"
             >
               <option value="student">Student</option>
               <option value="worker">Worker</option>
@@ -65,40 +68,40 @@ const Login = () => {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">
-              {role === "admin" ? "Email" : "ID / Roll No"}
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">
+              {role === "admin" ? "Email Address" : "ID / Roll Number"}
             </label>
             <input
               type="text"
               required
               value={id}
               onChange={(e) => setId(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mt-1"
-              placeholder={role === "admin" ? "Enter Email" : "Enter ID"}
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-gray-300"
+              placeholder={role === "admin" ? "admin@test.com" : "e.g. 123456"}
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700">Password</label>
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-widest mb-2 ml-1">Password</label>
             <input
               type="password"
               required
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="appearance-none block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm mt-1"
-              placeholder="Enter your password"
+              className="w-full px-4 py-3 bg-gray-50 border border-gray-100 rounded-xl focus:ring-2 focus:ring-blue-500 outline-none transition-all placeholder-gray-300"
+              placeholder="••••••••"
             />
           </div>
 
-          <div>
+          <div className="pt-2">
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white ${
+              className={`w-full flex justify-center py-4 px-4 rounded-xl shadow-lg shadow-blue-900/20 text-sm font-black uppercase tracking-widest text-white transition-all cursor-pointer hover:scale-[1.02] active:scale-95 ${
                 isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
-              } focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500`}
+              }`}
             >
-              {isLoading ? "Logging in..." : "Sign in"}
+              {isLoading ? "Authenticating..." : "Sign In"}
             </button>
           </div>
         </form>

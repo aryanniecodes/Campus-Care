@@ -1,9 +1,10 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
+import toast from "react-hot-toast";
 
 const StatCard = ({ label, value, color = "text-gray-900" }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
+  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:scale-105 transition-all duration-300">
     <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
     <p className={`text-4xl font-bold mt-2 ${color}`}>{value}</p>
   </div>
@@ -17,25 +18,26 @@ const WorkerDashboard = () => {
 
   const fetchWorkerData = async () => {
     try {
-      const res = await api.get("/worker/me");
+      const res = await api.get("/workers/me");
       setWorker(res.data.data);
     } catch (error) {
-      console.log(error);
+      console.log("Error fetching worker stats:", error);
     }
   };
 
   const handleComplete = async (id) => {
     try {
       setLoadingId(id);
-      await api.put(`/worker/complete/${id}`);
-      alert("Task completed");
+      await api.put(`/workers/complete/${id}`);
+      toast.success("Task completed successfully!");
 
       // Refresh tasks
       setTasks((prev) => prev.filter((t) => t._id !== id));
       // Refresh worker stats
-      fetchWorkerData();
+      await fetchWorkerData();
     } catch (error) {
       console.log(error);
+      toast.error("Failed to complete task");
     } finally {
       setLoadingId(null);
     }
@@ -45,10 +47,10 @@ const WorkerDashboard = () => {
     const fetchTasks = async () => {
       try {
         const res = await api.get("/complaints/assigned");
-        console.log("API RESPONSE:", res.data);
         setTasks(res.data.data || res.data);
       } catch (error) {
-        console.log("Error fetching assigned tasks:", error.response?.data || error);
+        console.log("Error fetching assigned tasks:", error);
+        toast.error("Failed to load tasks");
       } finally {
         setLoading(false);
       }
@@ -58,40 +60,61 @@ const WorkerDashboard = () => {
     fetchWorkerData();
   }, []);
 
+  if (!worker && loading) {
+    return (
+      <DashboardLayout>
+        <div className="flex items-center justify-center h-64">
+          <p className="text-gray-500 font-medium animate-pulse text-lg">Loading Dashboard...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
   return (
     <DashboardLayout>
-      <div>
+      <div className="animate-in fade-in duration-500">
         <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Worker Dashboard 🔧</h2>
-          <p className="text-gray-500 mt-1">Manage your assigned tasks here.</p>
+          <h2 className="text-3xl font-bold text-gray-900 font-outfit">Worker Dashboard 🔧</h2>
+          <p className="text-gray-500 mt-1">Welcome back, {worker?.name || "Worker"}.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          <StatCard label="Assigned Tasks" value={loading ? "..." : tasks.length} />
-          <StatCard label="Tasks Completed" value={worker ? worker.completedTasks : "..."} color="text-green-600" />
-          <StatCard label="Availability" value={worker ? (worker.available ? "Available" : "Busy") : "..."} color="text-blue-600" />
+          <StatCard label="Assigned Tasks" value={worker ? worker.assignedTasks : 0} />
+          <StatCard label="Completed Tasks" value={worker ? worker.completedTasks : 0} color="text-green-600" />
+          <StatCard label="Availability" value={worker?.available ? "Available" : "Busy"} color={worker?.available ? "text-green-600" : "text-red-600"} />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 overflow-hidden">
           <h3 className="text-base font-semibold text-gray-700 mb-4">Pending Tasks</h3>
           {loading ? (
-            <p className="text-sm text-gray-400">Loading...</p>
+            <p className="text-sm text-gray-400">Loading tasks...</p>
           ) : tasks.length === 0 ? (
-            <p className="text-sm text-gray-400">No tasks assigned yet. Your tasks will appear here.</p>
+            <div className="text-center py-12 animate-in zoom-in duration-300">
+              <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <span className="text-2xl">🎉</span>
+              </div>
+              <p className="text-gray-500 font-medium text-lg">All caught up!</p>
+              <p className="text-gray-400 text-sm mt-1">No tasks assigned yet. Your tasks will appear here.</p>
+            </div>
           ) : (
             <div className="space-y-4">
               {tasks.map(t => (
-                <div key={t._id} className="border-b border-gray-50 pb-4 flex justify-between items-center flex-wrap gap-4">
+                <div key={t._id} className="p-4 rounded-xl border border-gray-50 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 flex justify-between items-center flex-wrap gap-4 group">
                   <div>
-                    <p className="font-medium text-gray-900">{t.title}</p>
+                    <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{t.title}</p>
                     <p className="text-sm text-gray-600 mt-1">{t.description}</p>
-                    <p className="text-xs text-gray-500 mt-2">Status: {t.status} | Priority: {t.priority}</p>
+                    <div className="flex items-center gap-3 mt-3">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500">{t.category}</span>
+                      <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
+                        t.priority === "high" ? "bg-red-100 text-red-600" : "bg-yellow-100 text-yellow-600"
+                      }`}>{t.priority}</span>
+                    </div>
                   </div>
                   {t.status !== "completed" && (
                     <button
                       disabled={loadingId === t._id}
                       onClick={() => handleComplete(t._id)}
-                      className="bg-green-500 hover:bg-green-600 text-white px-4 py-2 text-sm font-medium rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 text-sm font-bold rounded-lg transition-all shadow-md shadow-green-900/10 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
                       {loadingId === t._id ? "Processing..." : "Mark as Completed"}
                     </button>
