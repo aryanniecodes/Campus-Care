@@ -41,11 +41,7 @@ const CreateComplaint = () => {
         data.append("image", formData.image);
       }
 
-      await api.post("/complaints", data, {
-        headers: {
-          "Content-Type": "multipart/form-data",
-        },
-      });
+      await api.post("/complaints", data);
 
       toast.success("Complaint submitted successfully");
       navigate("/student/complaints");

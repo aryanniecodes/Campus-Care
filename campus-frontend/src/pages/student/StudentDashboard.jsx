@@ -21,14 +21,15 @@ const StudentDashboard = () => {
   const fetchData = async () => {
     try {
       const res = await api.get("/complaints/my");
-      const data = res.data.data;
+      const data = res?.data?.data || [];
+      const safeData = Array.isArray(data) ? data : [];
       
-      setComplaints(data);
+      setComplaints(safeData);
       
       setStats({
-        total: data.length,
-        pending: data.filter(c => c.status !== "completed").length,
-        completed: data.filter(c => c.status === "completed").length
+        total: safeData.length,
+        pending: safeData.filter(c => c?.status !== "completed").length,
+        completed: safeData.filter(c => c?.status === "completed").length
       });
     } catch (error) {
       console.log("Error fetching dashboard data:", error);
@@ -43,6 +44,7 @@ const StudentDashboard = () => {
 
   return (
     <DashboardLayout>
+      {!complaints ? <div>Loading...</div> : (
       <div>
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Welcome back 👋</h2>
@@ -80,6 +82,7 @@ const StudentDashboard = () => {
           )}
         </div>
       </div>
+      )}
     </DashboardLayout>
   );
 };

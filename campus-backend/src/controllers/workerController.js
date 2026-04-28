@@ -2,6 +2,7 @@ const Complaint = require("../models/Complaint");
 const Worker = require("../models/Worker");
 const Student = require("../models/Student");
 const sendEmail = require("../utils/sendEmail");
+const Activity = require("../models/Activity");
 
 // 1. Get Logged In Worker (Me)
 exports.getWorkerMe = async (req, res) => {
@@ -16,10 +17,13 @@ exports.getWorkerMe = async (req, res) => {
       status: "completed" 
     });
 
+    const workerData = worker.toObject();
+    workerData.available = workerData.tasksAssigned < 5;
+
     res.status(200).json({ 
       success: true, 
       data: { 
-        ...worker.toObject(), 
+        ...workerData, 
         completedTasks,
         assignedTasks: worker.tasksAssigned 
       } 
@@ -69,11 +73,40 @@ exports.completeTask = async (req, res) => {
     complaint.status = "completed";
     await complaint.save();
 
+    await Activity.create({
+      message: "Complaint marked as completed",
+      type: "completion"
+    });
+
     // Update worker
     const worker = await Worker.findById(req.user.id);
     if (worker) {
-      worker.tasksAssigned = Math.max(0, worker.tasksAssigned - 1);
-      worker.available = true;
+      worker.tasksAssigned = Math.max(0, (worker.tasksAssigned || 0) - 1);
+      
+      // 🔄 QUEUE SYSTEM: Find pending complaint for this worker's role
+      const roleToCategory = {
+        electrician: "electricity",
+        plumber: "plumbing",
+        cleaner: "cleaning"
+      };
+
+      const pendingComplaint = await Complaint.findOne({
+        category: roleToCategory[worker.role] || "cleaning",
+        status: "pending"
+      });
+
+      if (pendingComplaint) {
+        pendingComplaint.assignedWorker = worker._id;
+        pendingComplaint.status = "in-progress";
+        worker.tasksAssigned += 1;
+        
+        await pendingComplaint.save();
+        console.log("AUTO ASSIGNED FROM QUEUE:", pendingComplaint._id);
+      }
+
+      if (worker.tasksAssigned < 5) {
+        worker.available = true;
+      }
       await worker.save();
     }
 
@@ -137,10 +170,15 @@ exports.toggleAvailability = async (req, res) => {
 exports.getAllWorkers = async (req, res) => {
   try {
     const workers = await Worker.find().select("-password");
+    const formattedWorkers = workers.map(w => {
+      const obj = w.toObject();
+      obj.available = obj.tasksAssigned < 5;
+      return obj;
+    });
 
     res.json({
       success: true,
-      data: workers
+      data: formattedWorkers
     });
 
   } catch (error) {

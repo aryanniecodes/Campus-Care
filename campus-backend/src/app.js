@@ -8,6 +8,7 @@ const complaintRoutes = require("./routes/complaintRoutes");
 const workerRoutes = require("./routes/workerRoutes");
 const feedbackRoutes = require("./routes/feedbackRoutes");
 const adminRoutes = require("./routes/adminRoutes");
+const activityRoutes = require("./routes/activityRoutes");
 
 connectDB();
 
@@ -25,6 +26,7 @@ app.use("/api/complaints", complaintRoutes);
 app.use("/api/workers", workerRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin", adminRoutes);
+app.use("/api/activity", activityRoutes);
 
 // Base route
 app.get("/", (req, res) => {

@@ -22,39 +22,49 @@ const AdminDashboard = () => {
   const [complaints, setComplaints] = useState([]);
   const [analytics, setAnalytics] = useState({ total: 0, completed: 0, pending: 0, avgRating: 0 });
   const [workerStats, setWorkerStats] = useState([]);
+  const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        const [complaintsRes, analyticsRes, workerStatsRes] = await Promise.all([
-          api.get("/complaints/all"),
-          api.get("/complaints/analytics"),
-          api.get("/workers/stats")
+  const fetchData = async () => {
+    try {
+      // Fetch Activities
+      const actRes = await api.get("/activity");
+      const activitiesData = actRes?.data?.data || [];
+      if (activitiesData.length === 0) {
+        setActivities([
+          { type: "create", message: "New complaint submitted", createdAt: new Date() },
+          { type: "assign", message: "Worker assigned to complaint", createdAt: new Date() }
         ]);
-        
-        setComplaints(complaintsRes.data?.data || []);
-        
-        if (analyticsRes.data && analyticsRes.data.data) {
-          setAnalytics(analyticsRes.data.data);
-        } else {
-          setAnalytics({ total: 0, completed: 0, pending: 0, avgRating: 0 });
-        }
-        
-        setWorkerStats(workerStatsRes.data?.data || []);
-        console.log("ADMIN DATA:", {
-          complaints: complaintsRes.data?.data,
-          analytics: analyticsRes.data?.data,
-          workers: workerStatsRes.data?.data
-        });
-      } catch (error) {
-        console.log("Error fetching dashboard data:", error);
-        toast.error("Failed to load dashboard analytics");
-      } finally {
-        setLoading(false);
+      } else {
+        setActivities(Array.isArray(activitiesData) ? activitiesData : []);
       }
-    };
 
+      // Fetch Stats
+      const [complaintsRes, analyticsRes, workerStatsRes] = await Promise.all([
+        api.get("/complaints/all"),
+        api.get("/complaints/analytics"),
+        api.get("/workers/stats")
+      ]);
+      
+      const compData = complaintsRes?.data?.data || [];
+      setComplaints(Array.isArray(compData) ? compData : []);
+      
+      if (analyticsRes?.data?.data) {
+        setAnalytics(analyticsRes.data.data);
+      } else {
+        setAnalytics({ total: 0, completed: 0, pending: 0, avgRating: 0 });
+      }
+      
+      const workerData = workerStatsRes?.data?.data || [];
+      setWorkerStats(Array.isArray(workerData) ? workerData : []);
+    } catch (error) {
+      console.log("Error fetching dashboard data:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
     fetchData();
   }, []);
 
@@ -126,6 +136,38 @@ const AdminDashboard = () => {
           <StatCard label="Student Rating" value={`${analytics.avgRating} / 5`} color="text-blue-600" icon="⭐" />
         </div>
 
+        <div className="bg-white p-4 rounded-xl shadow mt-6 mb-8">
+          <h2 className="text-lg font-bold mb-4">Recent Activity</h2>
+
+          {activities.length === 0 ? (
+            <p className="text-gray-400">No recent activity</p>
+          ) : (
+            <div className="space-y-3 max-h-[200px] overflow-y-auto">
+              {activities.map((item, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                >
+                  <div className="text-xl">
+                    {item.type === "create" && "📝"}
+                    {item.type === "complete" && "✅"}
+                    {item.type === "assign" && "🔧"}
+                  </div>
+
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800">
+                      {item.message}
+                    </p>
+                    <p className="text-xs text-gray-400">
+                      {new Date(item.createdAt).toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
           {/* Pie Chart Card */}
           <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center hover:shadow-xl transition-all duration-500">
@@ -183,9 +225,9 @@ const AdminDashboard = () => {
                       <p className="font-black text-green-600">{w.completed}</p>
                     </div>
                     <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${
-                      w.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                      w.tasksAssigned >= 5 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
                     }`}>
-                      {w.available ? "Free" : "Busy"}
+                      {w.tasksAssigned >= 5 ? "Busy" : "Available"}
                     </span>
                   </div>
                 </div>

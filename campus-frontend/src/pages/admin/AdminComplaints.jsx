@@ -10,18 +10,17 @@ const AdminComplaints = () => {
   const [filter, setFilter] = useState("all");
   const [actionLoading, setActionLoading] = useState(null);
 
-  const fetchData = async () => {
+  const fetchComplaints = async () => {
     try {
       const [complaintsRes, workersRes] = await Promise.all([
         api.get("/complaints/all"),
         api.get("/workers/all")
       ]);
-      if (complaintsRes.data && complaintsRes.data.data) {
-        setComplaints(complaintsRes.data.data);
-      } else {
-        setComplaints([]);
-      }
-      setWorkers(workersRes.data?.data || []);
+      const compData = complaintsRes?.data?.data || [];
+      setComplaints(Array.isArray(compData) ? compData : []);
+      
+      const workData = workersRes?.data?.data || [];
+      setWorkers(Array.isArray(workData) ? workData : []);
       console.log("ADMIN COMPLAINTS:", complaintsRes.data);
     } catch (error) {
       console.error("Error fetching data:", error);
@@ -32,16 +31,16 @@ const AdminComplaints = () => {
   };
 
   useEffect(() => {
-    fetchData();
+    fetchComplaints();
   }, []);
 
   const handleAssign = async (complaintId, workerId) => {
     if (!workerId) return toast.error("Please select a worker");
     try {
       setActionLoading(complaintId);
-      await api.post("/complaints/assign", { complaintId, workerId });
+      await api.put(`/complaints/assign/${complaintId}`, { workerId });
       toast.success("Worker assigned successfully");
-      await fetchData();
+      await fetchComplaints();
     } catch (error) {
       toast.error(error.response?.data?.message || "Assignment failed");
     } finally {
@@ -54,7 +53,7 @@ const AdminComplaints = () => {
       setActionLoading(id);
       await api.put(`/complaints/status/${id}`, { status });
       toast.success(`Status updated to ${status}`);
-      await fetchData();
+      await fetchComplaints();
     } catch (error) {
       toast.error("Status update failed");
     } finally {
@@ -141,8 +140,8 @@ const AdminComplaints = () => {
                     <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Priority: {c.priority}</span>
                     <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100 flex items-center gap-2">
                       Assigned To: 
-                      <span className={c.assignedTo ? "text-blue-600" : "text-orange-500"}>
-                        {c.assignedTo?.name || "Unassigned"}
+                      <span className={c.assignedWorker ? "text-blue-600" : "text-orange-500"}>
+                        {c.assignedWorker?.name || "Unassigned"}
                       </span>
                     </span>
                   </div>
@@ -158,7 +157,12 @@ const AdminComplaints = () => {
                         defaultValue=""
                       >
                         <option value="" disabled>Reassign Worker...</option>
-                        {workers.map(w => (
+                        {workers.filter(w => {
+                          if (c.category === "plumbing") return w.role === "plumber";
+                          if (c.category === "electric" || c.category === "electrical") return w.role === "electrician";
+                          if (c.category === "cleaning") return w.role === "cleaner";
+                          return true;
+                        }).map(w => (
                           <option key={w._id} value={w._id}>{w.name} ({w.tasksAssigned} tasks)</option>
                         ))}
                       </select>

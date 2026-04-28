@@ -25,15 +25,28 @@ const WorkerDashboard = () => {
     }
   };
 
+  const fetchTasks = async () => {
+    try {
+      const res = await api.get("/worker/tasks");
+      const taskData = res.data.data || [];
+      setTasks(taskData);
+      console.log("WORKER TASKS:", taskData);
+    } catch (error) {
+      console.log("Error fetching assigned tasks:", error);
+      toast.error("Failed to load tasks");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleComplete = async (id) => {
     try {
       setLoadingId(id);
       await api.put(`/workers/complete/${id}`);
       toast.success("Task completed successfully!");
 
-      // Refresh tasks
-      setTasks((prev) => prev.filter((t) => t._id !== id));
-      // Refresh worker stats
+      // Refresh data
+      await fetchTasks();
       await fetchWorkerData();
     } catch (error) {
       console.log(error);
@@ -44,20 +57,7 @@ const WorkerDashboard = () => {
   };
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const res = await api.get("/complaints/assigned");
-        setTasks(res.data.data);
-      } catch (error) {
-        console.log("Error fetching assigned tasks:", error);
-        toast.error("Failed to load tasks");
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchTasks();
-    fetchWorkerData();
   }, []);
 
   if (!worker && loading) {
@@ -98,7 +98,7 @@ const WorkerDashboard = () => {
             </div>
           ) : (
             <div className="space-y-4">
-              {tasks.map(t => (
+              {tasks.filter(t => t.status !== "completed").map(t => (
                 <div key={t._id} className="p-4 rounded-xl border border-gray-50 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 flex justify-between items-center flex-wrap gap-4 group">
                   <div>
                     <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{t.title}</p>

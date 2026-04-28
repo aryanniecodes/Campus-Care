@@ -2,93 +2,61 @@ const axios = require("axios");
 const Complaint = require("../models/Complaint");
 const Worker = require("../models/Worker");
 const sendEmail = require("../utils/sendEmail");
+const Activity = require("../models/Activity");
 
-// 🔥 CREATE COMPLAINT + AI + ASSIGNMENT
+// 🔥 CREATE COMPLAINT
 exports.createComplaint = async (req, res) => {
   try {
-    const { title, description, studentId } = req.body;
+    const { title, description, category, priority } = req.body;
 
-    let category = "other";
-
-    // 🤖 AI CALL
-    try {
-      const aiRes = await axios.post("http://localhost:8000/classify", {
-        text: title + " " + description
-      });
-
-      category = aiRes.data.category;
-    } catch (err) {
-      console.log("AI failed, using fallback category");
-    }
-
-    // 🔧 CATEGORY → ROLE MAPPING
-    let roleMap = {
-      electricity: "electrician",
+    const roleMap = {
       plumbing: "plumber",
+      electric: "electrician",
+      electrical: "electrician",
       cleaning: "cleaner",
       other: "cleaner"
     };
 
-    // 👷 WORKER ASSIGNMENT
-    let worker = await Worker.findOne({
-      role: roleMap[category],
-      available: true,
+    const workerRole = roleMap[category] || "cleaner";
+
+    const worker = await Worker.findOne({
+      role: workerRole,
       tasksAssigned: { $lt: 5 }
     });
 
-    console.log("Category:", category);
-    console.log("Mapped role:", roleMap[category]);
-    console.log("Worker found:", worker);
-
-    if (!worker) {
-      worker = await Worker.findOne();
-    }
-
-    let assignedWorker = null;
-
-    if (worker) {
-      assignedWorker = worker._id;
-
-      worker.tasksAssigned += 1;
-      await worker.save();
-
-      sendEmail(
-        worker.email || worker.workerId,
-        "New Task Assigned",
-        `You have been assigned a new complaint: ${title}`
-      );
-    }
-
-    // 📸 IMAGE HANDLING
     let imagePath = null;
     if (req.file) {
       imagePath = `/uploads/${req.file.filename}`;
     }
 
-    // ⭐ PRIORITY DETECTION
-    const count = await Complaint.countDocuments({ title });
-    const priority = count >= 2 ? "high" : "low";
-
-    // 💾 SAVE COMPLAINT
-    const newComplaint = new Complaint({
+    const complaint = await Complaint.create({
       title,
       description,
       category,
-      studentId,
-      assignedWorker,
+      priority,
+      studentId: req.user.id,
+      assignedWorker: worker ? worker._id : null,
       image: imagePath,
-      priority
+      status: worker ? "in-progress" : "pending"
     });
 
-    await newComplaint.save();
+    if (worker) {
+      worker.tasksAssigned += 1;
+      if (worker.tasksAssigned >= 5) {
+        worker.available = false;
+      }
+      await worker.save();
+    }
 
-    res.status(201).json({
-      message: "Complaint created + assigned",
-      complaint: newComplaint
+    await Activity.create({
+      message: "New complaint submitted",
+      type: "complaint"
     });
+
+    res.json({ success: true, data: complaint });
 
   } catch (error) {
-    console.error("Error:", error);
+    console.error("CREATE ERROR:", error);
     res.status(500).json({ message: error.message });
   }
 };
@@ -97,13 +65,14 @@ exports.createComplaint = async (req, res) => {
 // 🔍 GET ALL COMPLAINTS (ADMIN)
 exports.getAllComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find().sort({ createdAt: -1 });
+    const complaints = await Complaint.find()
+      .populate("assignedWorker", "name email")
+      .sort({ createdAt: -1 });
 
-    res.status(200).json({ complaints });
-
+    res.json({ success: true, data: complaints });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: error.message });
+    console.error(error);
+    res.json({ success: true, data: [] });
   }
 };
 
@@ -124,6 +93,11 @@ exports.giveFeedback = async (req, res) => {
 
     await complaint.save();
 
+    await Activity.create({
+      message: "Feedback submitted",
+      type: "feedback"
+    });
+
     res.status(200).json({
       message: "Feedback submitted",
       complaint
@@ -139,8 +113,14 @@ exports.giveFeedback = async (req, res) => {
 exports.getComplaintsByStatus = async (req, res) => {
   try {
     const { status } = req.params;
-    const complaints = await Complaint.find({ status }).sort({ createdAt: -1 });
-    res.status(200).json({ complaints });
+    const complaints = await Complaint.find({ status }).populate("assignedWorker", "name email").sort({ createdAt: -1 });
+    
+    const formatted = complaints.map(c => ({
+      ...c.toObject(),
+      assignedTo: c.assignedWorker
+    }));
+    
+    res.status(200).json({ success: true, data: formatted });
   } catch (error) {
     console.error("Error:", error);
     res.status(500).json({ message: error.message });
@@ -164,10 +144,14 @@ exports.getDashboardSummary = async (req, res) => {
 // 👨‍🎓 GET MY COMPLAINTS
 exports.getMyComplaints = async (req, res) => {
   try {
-    const complaints = await Complaint.find({ studentId: req.user.id }).sort({ createdAt: -1 });
+    const complaints = await Complaint.find({
+      studentId: req.user.id
+    }).populate("assignedWorker", "name email");
+
     res.json({ success: true, data: complaints });
   } catch (error) {
-    res.status(500).json({ success: false, message: error.message });
+    console.error(error);
+    res.json({ success: true, data: [] });
   }
 };
 
@@ -219,12 +203,27 @@ exports.assignWorker = async (req, res) => {
     if (req.user.role !== "admin") {
       return res.status(403).json({ message: "Admin only" });
     }
-    const { complaintId, workerId } = req.body;
-    const complaint = await Complaint.findById(complaintId);
+    const { workerId } = req.body;
+    const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ success: false, message: "Complaint not found" });
     complaint.assignedWorker = workerId;
     complaint.status = "pending";
     await complaint.save();
+
+    const worker = await Worker.findById(workerId);
+    if (worker) {
+      worker.tasksAssigned = (worker.tasksAssigned || 0) + 1;
+      if (worker.tasksAssigned >= 5) {
+        worker.available = false;
+      }
+      await worker.save();
+    }
+
+    await Activity.create({
+      message: "Worker assigned to complaint",
+      type: "assignment"
+    });
+
     res.json({ success: true, message: "Worker assigned successfully", data: complaint });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });

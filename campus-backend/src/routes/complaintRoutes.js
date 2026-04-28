@@ -45,7 +45,7 @@ router.put("/feedback/:id", protect, giveFeedback);
 router.get("/feedback", protect, getAllFeedback);
 
 // Admin Management
-router.post("/assign", protect, assignWorker);
+router.put("/assign/:id", protect, assignWorker);
 router.put("/status/:id", protect, updateStatus);
 router.get("/analytics", protect, getAnalytics);
 

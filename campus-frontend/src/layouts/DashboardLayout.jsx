@@ -33,7 +33,12 @@ const DashboardLayout = ({ children }) => {
       <aside className="w-64 bg-gray-900 text-white flex flex-col shadow-xl">
         {/* Brand Header */}
         <div className="p-6 border-b border-gray-800">
-          <h1 className="text-2xl font-bold tracking-wide text-blue-500">CampusCare</h1>
+          <h1 
+            onClick={() => navigate(`/${role || "student"}`)} 
+            className="text-2xl font-bold tracking-wide text-blue-500 cursor-pointer hover:opacity-80 transition-opacity"
+          >
+            CampusCare
+          </h1>
           <p className="text-sm text-gray-400 mt-1 capitalize">{role} Portal</p>
         </div>
 

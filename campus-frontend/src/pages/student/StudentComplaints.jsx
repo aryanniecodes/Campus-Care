@@ -16,9 +16,9 @@ const StudentComplaints = () => {
   const fetchComplaints = async () => {
     try {
       const res = await api.get("/complaints/my");
-      setComplaints(res.data.data);
+      setComplaints(res.data.data || []);
     } catch (error) {
-      console.log("Error fetching complaints:", error);
+      console.error("Error fetching complaints:", error);
       toast.error("Failed to load complaints");
     } finally {
       setLoading(false);
@@ -62,13 +62,13 @@ const StudentComplaints = () => {
         </button>
       </div>
 
-      {loading ? (
+      {!complaints ? <div>Loading...</div> : loading ? (
         <div className="flex items-center justify-center h-64">
           <p className="text-gray-500 font-medium animate-pulse text-lg">Loading your complaints...</p>
         </div>
       ) : complaints.length === 0 ? (
-        <div className="bg-white rounded-2xl p-12 shadow-sm border border-gray-100 text-center animate-in fade-in zoom-in duration-500">
-          <p className="text-gray-500 text-lg">You haven't submitted any complaints yet.</p>
+        <div className="bg-white rounded-2xl p-12 shadow-sm border border-gray-100 text-center">
+          <p className="text-gray-500 text-lg">No complaints found</p>
           <button 
             onClick={() => navigate("/student/create")}
             className="text-blue-600 font-bold mt-2 hover:underline cursor-pointer"
@@ -78,7 +78,7 @@ const StudentComplaints = () => {
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-4">
-          {complaints.map((complaint) => (
+          {Array.isArray(complaints) && complaints.map((complaint) => (
             <div key={complaint._id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col hover:shadow-xl hover:scale-[1.01] transition-all duration-300">
               <div className="flex justify-between items-center w-full">
                 <div>
