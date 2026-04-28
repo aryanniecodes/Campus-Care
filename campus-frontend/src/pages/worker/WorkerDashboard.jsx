@@ -16,7 +16,7 @@ const WorkerDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [loadingId, setLoadingId] = useState(null);
 
-  const fetchWorkerData = async () => {
+  const fetchWorker = async () => {
     try {
       const res = await api.get("/workers/me");
       setWorker(res.data.data);
@@ -28,12 +28,12 @@ const WorkerDashboard = () => {
   const fetchTasks = async () => {
     try {
       const res = await api.get("/worker/tasks");
-      const taskData = res.data.data || [];
-      setTasks(taskData);
-      console.log("WORKER TASKS:", taskData);
+      const tasksData = res?.data?.data || [];
+      setTasks(Array.isArray(tasksData) ? tasksData : []);
     } catch (error) {
-      console.log("Error fetching assigned tasks:", error);
-      toast.error("Failed to load tasks");
+      console.error("TASK FETCH ERROR:", error);
+      // DO NOT show toast if no tasks
+      setTasks([]);
     } finally {
       setLoading(false);
     }
@@ -47,7 +47,7 @@ const WorkerDashboard = () => {
 
       // Refresh data
       await fetchTasks();
-      await fetchWorkerData();
+      await fetchWorker();
     } catch (error) {
       console.log(error);
       toast.error("Failed to complete task");
@@ -57,6 +57,7 @@ const WorkerDashboard = () => {
   };
 
   useEffect(() => {
+    fetchWorker();
     fetchTasks();
   }, []);
 
@@ -89,13 +90,7 @@ const WorkerDashboard = () => {
           {loading ? (
             <p className="text-sm text-gray-400">Loading tasks...</p>
           ) : tasks.length === 0 ? (
-            <div className="text-center py-12 animate-in zoom-in duration-300">
-              <div className="bg-gray-50 w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
-                <span className="text-2xl">🎉</span>
-              </div>
-              <p className="text-gray-500 font-medium text-lg">All caught up!</p>
-              <p className="text-gray-400 text-sm mt-1">No tasks assigned yet. Your tasks will appear here.</p>
-            </div>
+            <p className="text-gray-500 text-center py-8">No tasks assigned yet</p>
           ) : (
             <div className="space-y-4">
               {tasks.filter(t => t.status !== "completed").map(t => (
