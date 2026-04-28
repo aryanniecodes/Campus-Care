@@ -16,6 +16,15 @@ const CreateComplaint = () => {
   });
   const [imagePreview, setImagePreview] = useState(null);
 
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  const showFeedback = (msg, error = false) => {
+    setMessage(msg);
+    setIsError(error);
+    setTimeout(() => setMessage(""), 3000);
+  };
+
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     setFormData({ ...formData, image: file });
@@ -43,13 +52,12 @@ const CreateComplaint = () => {
 
       await api.post("/complaints", data);
 
+      showFeedback("Complaint submitted successfully");
       toast.success("Complaint submitted successfully");
-      navigate("/student/complaints");
+      setTimeout(() => navigate("/student/complaints"), 1500);
     } catch (error) {
-      console.log("FULL ERROR OBJECT:", error);
-      console.log("STATUS:", error.response?.status);
-      console.log("ERROR RESPONSE:", error.response?.data);
-
+      console.log("CREATE ERROR:", error);
+      showFeedback("Failed to submit complaint", true);
       toast.error("Failed to submit complaint. Please try again.");
     } finally {
       setLoading(false);
@@ -58,6 +66,11 @@ const CreateComplaint = () => {
 
   return (
     <DashboardLayout>
+      {message && (
+        <div className={`fixed top-24 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm text-white ${isError ? 'bg-red-600' : 'bg-green-600'}`}>
+          {message}
+        </div>
+      )}
       <div className="max-w-2xl">
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900">Submit New Complaint</h2>

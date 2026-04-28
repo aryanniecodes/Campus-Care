@@ -119,7 +119,8 @@ const AdminDashboard = () => {
     ? [...workerStats].sort((a, b) => b.completed - a.completed)[0]
     : null;
 
-  const rankedWorkers = [...workerStats].sort((a, b) => b.completed - a.completed);
+  const rankedWorkers = [...(workerStats || [])].sort((a, b) => (b.completed || 0) - (a.completed || 0));
+  console.log("Workers:", workerStats);
 
   const chartData = [
     { name: "Completed", value: analytics.completed || 0 },
@@ -234,8 +235,10 @@ const AdminDashboard = () => {
               🏅 Worker Leaderboard
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {(analytics.leaderboard || []).map((w, index) => (
-                <div key={w.workerId} className="flex justify-between items-center p-5 rounded-2xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+              {(rankedWorkers || []).length === 0 ? (
+                <p className="text-gray-400 text-center py-8 col-span-full font-medium">No worker data available</p>
+              ) : (rankedWorkers || []).map((w, index) => (
+                <div key={w?._id || w?.workerId || index} className="flex justify-between items-center p-5 rounded-2xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
                   <div className="flex items-center gap-5">
                     <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shadow-sm ${
                       index === 0 ? "bg-amber-100 text-amber-600 rotate-3" : 
@@ -245,19 +248,19 @@ const AdminDashboard = () => {
                       #{index + 1}
                     </span>
                     <div>
-                      <p className="font-extrabold text-gray-900 group-hover:text-blue-600 transition-colors">{w.name}</p>
-                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-0.5">Worker ID: {w.workerId}</p>
+                      <p className="font-extrabold text-gray-900 group-hover:text-blue-600 transition-colors">{w?.name || "Unknown Worker"}</p>
+                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-0.5">Worker ID: {w?._id || w?.workerId || "N/A"}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
                     <div className="text-right">
                       <p className="text-[10px] text-gray-400 font-black uppercase mb-0.5">Success</p>
-                      <p className="font-black text-green-600">{w.completed}</p>
+                      <p className="font-black text-green-600">{w?.completed || 0}</p>
                     </div>
                     <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${
-                      w.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
+                      w?.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
                     }`}>
-                      {w.available ? "Available" : "Busy"}
+                      {w?.available ? "Available" : "Busy"}
                     </span>
                   </div>
                 </div>

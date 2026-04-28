@@ -14,17 +14,22 @@ const WorkerDashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [loadingId, setLoadingId] = useState(null);
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
 
-  const showFeedback = (msg) => {
+  console.log("Worker tasks:", tasks);
+
+  const showFeedback = (msg, error = false) => {
     setMessage(msg);
+    setIsError(error);
     setTimeout(() => setMessage(""), 3000);
   };
 
   const fetchWorker = async () => {
     try {
       const res = await api.get("/workers/me");
-      const newData = res.data.data;
+      const newData = res?.data?.data || null;
       setWorker(prev => {
         if (JSON.stringify(prev) !== JSON.stringify(newData)) return newData;
         return prev;
@@ -59,8 +64,8 @@ const WorkerDashboard = () => {
 
       // Optimistic UI Update
       setTasks(prev =>
-        prev.map(task =>
-          task._id === id ? { ...task, status: "completed" } : task
+        (prev || []).map(task =>
+          task?._id === id ? { ...task, status: "completed" } : task
         )
       );
       
@@ -69,6 +74,7 @@ const WorkerDashboard = () => {
       await fetchWorker();
     } catch (error) {
       console.log(error);
+      showFeedback("Failed to complete task", true);
       toast.error("Failed to complete task");
     } finally {
       setLoadingId(null);
@@ -87,10 +93,10 @@ const WorkerDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const pendingTasks = tasks?.filter(c => c?.status !== "completed") || [];
-  const completedTasks = tasks?.filter(c => c?.status === "completed") || [];
+  const pendingTasks = (tasks || []).filter(c => c?.status !== "completed");
+  const completedTasks = (tasks || []).filter(c => c?.status === "completed");
 
-  if (!worker && loading) {
+  if (loading && !worker) {
     return (
       <DashboardLayout>
         <div className="flex items-center justify-center h-64">
@@ -104,7 +110,7 @@ const WorkerDashboard = () => {
     <DashboardLayout>
       <div className="animate-in fade-in duration-500">
         {message && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm">
+          <div className={`fixed top-24 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm text-white ${isError ? 'bg-red-600' : 'bg-green-600'}`}>
             {message}
           </div>
         )}
@@ -121,7 +127,7 @@ const WorkerDashboard = () => {
 
         <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 overflow-hidden">
           <h3 className="text-base font-semibold text-gray-700 mb-4">Pending Tasks</h3>
-          {loading ? (
+          {loading && tasks.length === 0 ? (
             <p className="text-sm text-gray-400">Loading tasks...</p>
           ) : pendingTasks.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No tasks assigned yet</p>
@@ -133,7 +139,9 @@ const WorkerDashboard = () => {
                     <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{t?.title}</p>
                     <p className="text-sm text-gray-600 mt-1">{t?.description}</p>
                     <div className="flex items-center gap-3 mt-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500">{t?.category}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500">
+                        {t?.category} <span className="lowercase italic font-normal">(AI detected)</span>
+                      </span>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
                         t?.priority === "high" ? "bg-red-100 text-red-600" : "bg-yellow-100 text-yellow-600"
                       }`}>{t?.priority}</span>
@@ -143,9 +151,9 @@ const WorkerDashboard = () => {
                     <button
                       disabled={loadingId === t?._id}
                       onClick={() => handleComplete(t?._id)}
-                      className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 text-sm font-bold rounded-lg transition-all shadow-md shadow-green-900/10 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+                      className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-md shadow-green-900/10 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      {loadingId === t?._id ? "Processing..." : "Mark as Completed"}
+                      {loadingId === t?._id ? "Processing..." : "Mark Completed"}
                     </button>
                   )}
                   

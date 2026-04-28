@@ -12,6 +12,14 @@ const StudentComplaints = () => {
   const [feedback, setFeedback] = useState("");
   const [rating, setRating] = useState(5);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
+
+  const showFeedback = (msg, error = false) => {
+    setMessage(msg);
+    setIsError(error);
+    setTimeout(() => setMessage(""), 3000);
+  };
 
   const fetchComplaints = async () => {
     try {
@@ -47,12 +55,14 @@ const StudentComplaints = () => {
     try {
       setIsSubmitting(true);
       await api.put(`/complaints/${id}/feedback`, { rating, feedback });
+      showFeedback("Feedback submitted successfully");
       toast.success("Feedback submitted successfully!");
       setReviewingId(null);
       setFeedback("");
       setRating(5);
       await fetchComplaints();
     } catch (error) {
+      showFeedback("Failed to submit feedback", true);
       toast.error(error.response?.data?.message || "Error submitting feedback");
     } finally {
       setIsSubmitting(false);
@@ -61,6 +71,11 @@ const StudentComplaints = () => {
 
   return (
     <DashboardLayout>
+      {message && (
+        <div className={`fixed top-24 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm text-white ${isError ? 'bg-red-600' : 'bg-green-600'}`}>
+          {message}
+        </div>
+      )}
       <div className="flex justify-between items-center mb-8">
         <div>
           <h2 className="text-3xl font-bold text-gray-900 font-outfit">My Complaints</h2>
@@ -98,16 +113,16 @@ const StudentComplaints = () => {
                   <p className="text-sm text-gray-500 mt-1">
                     <span className="capitalize">Priority: {complaint.priority}</span>
                     <span className="mx-2">•</span>
-                    <span className="capitalize">{complaint.category}</span>
+                    <span className="capitalize">{complaint.category} <span className="text-[10px] text-gray-400 lowercase italic">(AI detected)</span></span>
                   </p>
                 </div>
                 <div className="flex items-center gap-4">
                   <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                     complaint.status === "completed" 
-                    ? "bg-green-100 text-green-600" 
-                    : "bg-yellow-100 text-yellow-600"
+                    ? "bg-green-100 text-green-700" 
+                    : "bg-yellow-100 text-yellow-700"
                   }`}>
-                    {complaint.status}
+                    {complaint.status === "completed" ? "Completed" : "In Progress"}
                   </span>
                   
                   {complaint.status === "completed" && !complaint.rating && reviewingId !== complaint._id && (

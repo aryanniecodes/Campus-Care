@@ -11,9 +11,11 @@ const AdminComplaints = () => {
   const [actionLoading, setActionLoading] = useState(null);
 
   const [message, setMessage] = useState("");
+  const [isError, setIsError] = useState(false);
 
-  const showFeedback = (msg) => {
+  const showFeedback = (msg, error = false) => {
     setMessage(msg);
+    setIsError(error);
     setTimeout(() => setMessage(""), 3000);
   };
 
@@ -63,6 +65,7 @@ const AdminComplaints = () => {
       toast.success("Worker assigned successfully");
       await fetchComplaints();
     } catch (error) {
+      showFeedback("Assignment failed", true);
       toast.error(error.response?.data?.message || "Assignment failed");
     } finally {
       setActionLoading(null);
@@ -77,6 +80,7 @@ const AdminComplaints = () => {
       toast.success(`Status updated to ${status}`);
       await fetchComplaints();
     } catch (error) {
+      showFeedback("Status update failed", true);
       toast.error("Status update failed");
     } finally {
       setActionLoading(null);
@@ -92,6 +96,7 @@ const AdminComplaints = () => {
       toast.success("Complaint deleted");
       setComplaints(prev => prev.filter(c => c._id !== id));
     } catch (error) {
+      showFeedback("Delete failed", true);
       toast.error("Delete failed");
     } finally {
       setActionLoading(null);
@@ -112,7 +117,7 @@ const AdminComplaints = () => {
     <DashboardLayout>
       <div className="animate-in fade-in duration-500">
         {message && (
-          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm">
+          <div className={`fixed top-24 left-1/2 -translate-x-1/2 px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm text-white ${isError ? 'bg-red-600' : 'bg-green-600'}`}>
             {message}
           </div>
         )}
@@ -159,15 +164,15 @@ const AdminComplaints = () => {
                   <div className="flex items-center gap-3 mb-2">
                     <h4 className="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">{c.title}</h4>
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
-                      c?.status === "completed" ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"
+                      c?.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
                     }`}>
-                      {c?.status === "in-progress" ? "PENDING" : (c?.status || "pending").toUpperCase()}
+                      {c?.status === "completed" ? "Completed" : "In Progress"}
                     </span>
                   </div>
                   <p className="text-gray-600 text-sm mb-4 leading-relaxed">{c.description}</p>
                   
                   <div className="flex flex-wrap gap-4 text-xs font-bold uppercase tracking-wider text-gray-400">
-                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Category: {c.category}</span>
+                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Category: {c.category} <span className="lowercase italic font-normal">(AI detected)</span></span>
                     <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Priority: {c.priority}</span>
                     <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100 flex items-center gap-2">
                       Assigned To: 
@@ -214,9 +219,9 @@ const AdminComplaints = () => {
                       <button 
                         onClick={() => handleUpdateStatus(c._id, "completed")}
                         disabled={actionLoading === c._id}
-                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition-all shadow-md shadow-green-900/10 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
+                        className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg text-sm font-medium transition-all shadow-md shadow-green-900/10 hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
                       >
-                        {actionLoading === c._id ? "..." : "Mark Completed"}
+                        {actionLoading === c._id ? "Processing..." : "Mark Completed"}
                       </button>
                     </div>
                   )}
@@ -224,7 +229,7 @@ const AdminComplaints = () => {
                   <button 
                     onClick={() => handleDelete(c._id)}
                     disabled={actionLoading === c._id}
-                    className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-xs font-bold transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
+                    className="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-medium transition-all hover:scale-105 active:scale-95 cursor-pointer disabled:opacity-50"
                   >
                     Delete Complaint
                   </button>
