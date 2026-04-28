@@ -16,10 +16,16 @@ const StudentComplaints = () => {
   const fetchComplaints = async () => {
     try {
       const res = await api.get("/complaints/my");
-      setComplaints(res.data.data || []);
+      const newData = res.data.data || [];
+      
+      setComplaints(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(newData)) {
+          return newData;
+        }
+        return prev;
+      });
     } catch (error) {
       console.error("Error fetching complaints:", error);
-      toast.error("Failed to load complaints");
     } finally {
       setLoading(false);
     }
@@ -27,6 +33,12 @@ const StudentComplaints = () => {
 
   useEffect(() => {
     fetchComplaints();
+
+    const interval = setInterval(() => {
+      fetchComplaints();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleSubmitFeedback = async (id) => {

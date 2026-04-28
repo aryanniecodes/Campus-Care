@@ -10,21 +10,35 @@ const AdminComplaints = () => {
   const [filter, setFilter] = useState("all");
   const [actionLoading, setActionLoading] = useState(null);
 
+  const [message, setMessage] = useState("");
+
+  const showFeedback = (msg) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(""), 3000);
+  };
+
   const fetchComplaints = async () => {
     try {
       const [complaintsRes, workersRes] = await Promise.all([
         api.get("/complaints/all"),
         api.get("/workers/all")
       ]);
-      const compData = complaintsRes?.data?.data || [];
-      setComplaints(Array.isArray(compData) ? compData : []);
       
-      const workData = workersRes?.data?.data || [];
-      setWorkers(Array.isArray(workData) ? workData : []);
-      console.log("ADMIN COMPLAINTS:", complaintsRes.data);
+      const newComplaints = complaintsRes?.data?.data || [];
+      const newWorkers = workersRes?.data?.data || [];
+
+      setComplaints(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(newComplaints)) return newComplaints;
+        return prev;
+      });
+
+      setWorkers(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(newWorkers)) return newWorkers;
+        return prev;
+      });
+
     } catch (error) {
       console.error("Error fetching data:", error);
-      toast.error("Failed to load complaints");
     } finally {
       setLoading(false);
     }
@@ -32,6 +46,12 @@ const AdminComplaints = () => {
 
   useEffect(() => {
     fetchComplaints();
+
+    const interval = setInterval(() => {
+      fetchComplaints();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const handleAssign = async (complaintId, workerId) => {
@@ -39,6 +59,7 @@ const AdminComplaints = () => {
     try {
       setActionLoading(complaintId);
       await api.put(`/complaints/assign/${complaintId}`, { workerId });
+      showFeedback("Worker assigned successfully");
       toast.success("Worker assigned successfully");
       await fetchComplaints();
     } catch (error) {
@@ -52,6 +73,7 @@ const AdminComplaints = () => {
     try {
       setActionLoading(id);
       await api.put(`/complaints/status/${id}`, { status });
+      showFeedback(`Status updated to ${status}`);
       toast.success(`Status updated to ${status}`);
       await fetchComplaints();
     } catch (error) {
@@ -66,6 +88,7 @@ const AdminComplaints = () => {
     try {
       setActionLoading(id);
       await api.delete(`/complaints/${id}`);
+      showFeedback("Complaint deleted");
       toast.success("Complaint deleted");
       setComplaints(prev => prev.filter(c => c._id !== id));
     } catch (error) {
@@ -83,14 +106,16 @@ const AdminComplaints = () => {
     return c?.status === filter;
   });
 
-  console.log("ALL COMPLAINTS:", complaints);
-  console.log("FILTERED (" + filter + "):", filteredComplaints);
-
   if (!complaints) return <p>Loading...</p>;
 
   return (
     <DashboardLayout>
       <div className="animate-in fade-in duration-500">
+        {message && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm">
+            {message}
+          </div>
+        )}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
           <div>
             <h2 className="text-3xl font-bold text-gray-900 font-outfit">Manage Complaints 📋</h2>

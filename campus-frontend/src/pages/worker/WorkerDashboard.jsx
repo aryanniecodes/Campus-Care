@@ -14,12 +14,21 @@ const WorkerDashboard = () => {
   const [tasks, setTasks] = useState([]);
   const [worker, setWorker] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [loadingId, setLoadingId] = useState(null);
+  const [message, setMessage] = useState("");
+
+  const showFeedback = (msg) => {
+    setMessage(msg);
+    setTimeout(() => setMessage(""), 3000);
+  };
 
   const fetchWorker = async () => {
     try {
       const res = await api.get("/workers/me");
-      setWorker(res.data.data);
+      const newData = res.data.data;
+      setWorker(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(newData)) return newData;
+        return prev;
+      });
     } catch (error) {
       console.log("Error fetching worker stats:", error);
     }
@@ -28,11 +37,13 @@ const WorkerDashboard = () => {
   const fetchTasks = async () => {
     try {
       const res = await api.get("/complaints/worker");
-      const tasksData = res?.data?.data || [];
-      setTasks(Array.isArray(tasksData) ? tasksData : []);
+      const newData = res?.data?.data || [];
+      setTasks(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(newData)) return newData;
+        return prev;
+      });
     } catch (error) {
       console.error("TASK FETCH ERROR:", error);
-      // DO NOT show toast if no tasks
       setTasks([]);
     } finally {
       setLoading(false);
@@ -43,6 +54,7 @@ const WorkerDashboard = () => {
     try {
       setLoadingId(id);
       await api.put(`/workers/complete/${id}`);
+      showFeedback("Task marked as completed");
       toast.success("Task completed successfully!");
 
       // Optimistic UI Update
@@ -66,6 +78,13 @@ const WorkerDashboard = () => {
   useEffect(() => {
     fetchWorker();
     fetchTasks();
+
+    const interval = setInterval(() => {
+      fetchWorker();
+      fetchTasks();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   const pendingTasks = tasks?.filter(c => c?.status !== "completed") || [];
@@ -84,6 +103,11 @@ const WorkerDashboard = () => {
   return (
     <DashboardLayout>
       <div className="animate-in fade-in duration-500">
+        {message && (
+          <div className="fixed top-24 left-1/2 -translate-x-1/2 bg-blue-600 text-white px-6 py-2 rounded-full shadow-2xl z-50 animate-in slide-in-from-top-4 duration-300 font-bold text-sm">
+            {message}
+          </div>
+        )}
         <div className="mb-8">
           <h2 className="text-3xl font-bold text-gray-900 font-outfit">Worker Dashboard 🔧</h2>
           <p className="text-gray-500 mt-1">Welcome back, {worker?.name || "Worker"}.</p>

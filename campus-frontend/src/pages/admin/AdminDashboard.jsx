@@ -30,14 +30,16 @@ const AdminDashboard = () => {
       // Fetch Activities
       const actRes = await api.get("/activity");
       const activitiesData = actRes?.data?.data || [];
-      if (activitiesData.length === 0) {
-        setActivities([
+      
+      setActivities(prev => {
+        const newData = activitiesData.length === 0 ? [
           { type: "create", message: "New complaint submitted", createdAt: new Date() },
           { type: "assign", message: "Worker assigned to complaint", createdAt: new Date() }
-        ]);
-      } else {
-        setActivities(Array.isArray(activitiesData) ? activitiesData : []);
-      }
+        ] : (Array.isArray(activitiesData) ? activitiesData : []);
+        
+        if (JSON.stringify(prev) !== JSON.stringify(newData)) return newData;
+        return prev;
+      });
 
       // Fetch Stats
       const [complaintsRes, analyticsRes, workerStatsRes] = await Promise.all([
@@ -47,18 +49,29 @@ const AdminDashboard = () => {
       ]);
       
       const compData = complaintsRes?.data?.data || [];
-      setComplaints(Array.isArray(compData) ? compData : []);
+      setComplaints(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(compData)) return compData;
+        return prev;
+      });
       
       const data = analyticsRes?.data?.data || {};
-      setAnalytics({
-        total: data.total || 0,
-        completed: data.completed || 0,
-        pending: data.pending || 0,
-        avgRating: data.avgRating || 0
+      setAnalytics(prev => {
+        const newData = {
+          total: data.total || 0,
+          completed: data.completed || 0,
+          pending: data.pending || 0,
+          avgRating: data.avgRating || 0,
+          leaderboard: data.leaderboard || []
+        };
+        if (JSON.stringify(prev) !== JSON.stringify(newData)) return newData;
+        return prev;
       });
       
       const workerData = workerStatsRes?.data?.data || [];
-      setWorkerStats(Array.isArray(workerData) ? workerData : []);
+      setWorkerStats(prev => {
+        if (JSON.stringify(prev) !== JSON.stringify(workerData)) return workerData;
+        return prev;
+      });
     } catch (error) {
       console.log("Error fetching dashboard data:", error);
     } finally {
@@ -68,6 +81,12 @@ const AdminDashboard = () => {
 
   useEffect(() => {
     fetchData();
+
+    const interval = setInterval(() => {
+      fetchData();
+    }, 5000);
+
+    return () => clearInterval(interval);
   }, []);
 
   if (loading) {
