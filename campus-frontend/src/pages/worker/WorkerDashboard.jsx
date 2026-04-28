@@ -18,7 +18,7 @@ const WorkerDashboard = () => {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
-  console.log("Worker tasks:", tasks);
+  // console.log("Worker tasks:", tasks);
 
   const showFeedback = (msg, error = false) => {
     setMessage(msg);
@@ -35,7 +35,7 @@ const WorkerDashboard = () => {
         return prev;
       });
     } catch (error) {
-      console.log("Error fetching worker stats:", error);
+      // console.log("Error fetching worker stats:", error);
     }
   };
 
@@ -48,7 +48,7 @@ const WorkerDashboard = () => {
         return prev;
       });
     } catch (error) {
-      console.error("TASK FETCH ERROR:", error);
+      // console.error("TASK FETCH ERROR:", error);
       setTasks([]);
     } finally {
       setLoading(false);
@@ -73,7 +73,7 @@ const WorkerDashboard = () => {
       await fetchTasks();
       await fetchWorker();
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       showFeedback("Failed to complete task", true);
       toast.error("Failed to complete task");
     } finally {

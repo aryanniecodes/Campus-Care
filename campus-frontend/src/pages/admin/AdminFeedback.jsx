@@ -13,7 +13,7 @@ const AdminFeedback = () => {
         const res = await api.get("/complaints/feedback");
         setFeedbackList(res.data.data);
       } catch (error) {
-        console.log("Error fetching feedback:", error);
+        // console.log("Error fetching feedback:", error);
         toast.error("Failed to load feedback");
       } finally {
         setLoading(false);

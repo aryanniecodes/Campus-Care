@@ -25,7 +25,6 @@ exports.getAllComplaints = async (req, res) => {
 
 // GET DASHBOARD SUMMARY (Admin)
 exports.getDashboardSummary = async (req, res) => {
-  console.log("API HIT: getDashboardSummary");
   try {
     const total = await Complaint.countDocuments();
     const pending = await Complaint.countDocuments({ status: "pending" });

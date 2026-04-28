@@ -103,7 +103,7 @@ exports.completeTask = async (req, res) => {
         worker.tasksAssigned += 1;
         
         await pendingComplaint.save();
-        console.log("AUTO ASSIGNED FROM QUEUE:", pendingComplaint._id);
+        // console.log("AUTO ASSIGNED FROM QUEUE:", pendingComplaint._id);
       }
 
       if (worker.tasksAssigned < 5) {
@@ -127,17 +127,17 @@ Thank you for your patience.
 
       const testEmail = "aryanicodes@gmail.com";
       if (process.env.ENABLE_EMAIL === "true") {
-        console.log("SENDING COMPLETION EMAIL TO:", testEmail);
+        // console.log("SENDING COMPLETION EMAIL TO:", testEmail);
         await sendEmail(testEmail, "Complaint Completed", message);
       } else {
-        console.log("EMAIL DISABLED (DEV MODE)");
+        // console.log("EMAIL DISABLED (DEV MODE)");
       }
     }
 
     res.json({ success: true, message: "Task marked as completed" });
 
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     res.status(500).json({ message: error.message });
   }
 };

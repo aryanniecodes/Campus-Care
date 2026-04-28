@@ -33,7 +33,7 @@ const StudentComplaints = () => {
         return prev;
       });
     } catch (error) {
-      console.error("Error fetching complaints:", error);
+      // console.error("Error fetching complaints:", error);
     } finally {
       setLoading(false);
     }

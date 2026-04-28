@@ -73,7 +73,7 @@ const AdminDashboard = () => {
         return prev;
       });
     } catch (error) {
-      console.log("Error fetching dashboard data:", error);
+      // console.log("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +110,7 @@ const AdminDashboard = () => {
       setComplaints((prev) => prev.filter((c) => c._id !== id));
       toast.success("Complaint deleted successfully");
     } catch (error) {
-      console.log("Delete error:", error);
+      // console.log("Delete error:", error);
       toast.error("Failed to delete complaint");
     }
   };
@@ -120,7 +120,7 @@ const AdminDashboard = () => {
     : null;
 
   const rankedWorkers = [...(workerStats || [])].sort((a, b) => (b.completed || 0) - (a.completed || 0));
-  console.log("Workers:", workerStats);
+  // console.log("Workers:", workerStats);
 
   const chartData = [
     { name: "Completed", value: analytics.completed || 0 },

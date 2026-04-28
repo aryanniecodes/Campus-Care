@@ -40,7 +40,7 @@ const AdminComplaints = () => {
       });
 
     } catch (error) {
-      console.error("Error fetching data:", error);
+      // console.error("Error fetching data:", error);
     } finally {
       setLoading(false);
     }
@@ -103,7 +103,7 @@ const AdminComplaints = () => {
     }
   };
 
-  const filteredComplaints = complaints.filter(c => {
+  const filteredComplaints = (complaints || []).filter(c => {
     if (filter === "all") return true;
     if (filter === "pending") {
       return c?.status === "pending" || c?.status === "in-progress";
@@ -111,7 +111,7 @@ const AdminComplaints = () => {
     return c?.status === filter;
   });
 
-  if (!complaints) return <p>Loading...</p>;
+  if (!complaints) return <p className="text-center py-20 text-gray-400">Initial data loading...</p>;
 
   return (
     <DashboardLayout>

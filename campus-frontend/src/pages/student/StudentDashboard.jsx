@@ -32,7 +32,7 @@ const StudentDashboard = () => {
         completed: safeData.filter(c => c?.status === "completed").length
       });
     } catch (error) {
-      console.log("Error fetching dashboard data:", error);
+      // console.log("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }

@@ -100,9 +100,7 @@ exports.login = async (req, res) => {
 
     // Admin check
     if (role === "admin") {
-      console.log("Admin login input:", id);
       const admin = await Admin.findOne({ email: id });
-      console.log("Admin found:", admin);
 
       if (!admin) {
         return res.status(401).json({ success: false, message: "Invalid admin credentials" });
