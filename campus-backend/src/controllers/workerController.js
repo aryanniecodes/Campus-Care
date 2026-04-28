@@ -71,6 +71,7 @@ exports.completeTask = async (req, res) => {
 
     // Update complaint
     complaint.status = "completed";
+    complaint.history.push({ status: "completed", timestamp: new Date() });
     await complaint.save();
 
     await Activity.create({
@@ -98,6 +99,7 @@ exports.completeTask = async (req, res) => {
       if (pendingComplaint) {
         pendingComplaint.assignedWorker = worker._id;
         pendingComplaint.status = "in-progress";
+        pendingComplaint.history.push({ status: "assigned", timestamp: new Date() });
         worker.tasksAssigned += 1;
         
         await pendingComplaint.save();

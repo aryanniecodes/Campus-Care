@@ -151,6 +151,19 @@ const AdminComplaints = () => {
                       </span>
                     </span>
                   </div>
+
+                  
+                  {/* Minimal Timeline */}
+                  {(c?.history || []).length > 0 && (
+                    <div className="w-full mt-4 pt-4 border-t border-gray-100 flex flex-col gap-2">
+                      {(c?.history || []).map((item, index) => (
+                        <div key={item.timestamp || index} className="flex justify-between items-center text-sm">
+                          <p className="font-semibold text-gray-700 capitalize">{item.status}</p>
+                          <p className="text-xs text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 <div className="flex flex-col sm:flex-row md:flex-col gap-3 justify-center border-t md:border-t-0 md:border-l border-gray-100 pt-6 md:pt-0 md:pl-6 min-w-[220px]">

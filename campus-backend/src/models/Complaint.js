@@ -16,7 +16,14 @@ const complaintSchema = new mongoose.Schema({
   feedback: String,
   isApproved: Boolean,
   priority: { type: String, default: "low" },
-  status: { type: String, default: "pending" }
+  status: { type: String, default: "pending" },
+  history: {
+    type: [{
+      status: String,
+      timestamp: Date
+    }],
+    default: []
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Complaint", complaintSchema);

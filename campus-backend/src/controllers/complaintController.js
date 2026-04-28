@@ -37,7 +37,8 @@ exports.createComplaint = async (req, res) => {
       studentId: req.user.id,
       assignedWorker: worker ? worker._id : null,
       image: imagePath,
-      status: worker ? "in-progress" : "pending"
+      status: worker ? "in-progress" : "pending",
+      history: [{ status: "created", timestamp: new Date() }]
     });
 
     if (worker) {
@@ -94,6 +95,7 @@ exports.giveFeedback = async (req, res) => {
     complaint.feedback = feedback;
     complaint.rating = rating;
     complaint.isApproved = true; // Mark as approved once feedback is given
+    complaint.history.push({ status: "feedback", timestamp: new Date() });
 
     await complaint.save();
 
@@ -255,6 +257,7 @@ exports.assignWorker = async (req, res) => {
     if (!complaint) return res.status(404).json({ success: false, message: "Complaint not found" });
     complaint.assignedWorker = workerId;
     complaint.status = "pending";
+    complaint.history.push({ status: "assigned", timestamp: new Date() });
     await complaint.save();
 
     const worker = await Worker.findById(workerId);
@@ -287,6 +290,7 @@ exports.updateStatus = async (req, res) => {
     const complaint = await Complaint.findById(req.params.id);
     if (!complaint) return res.status(404).json({ success: false, message: "Complaint not found" });
     complaint.status = status;
+    complaint.history.push({ status, timestamp: new Date() });
     await complaint.save();
     res.json({ success: true, message: "Status updated successfully", data: complaint });
   } catch (error) {

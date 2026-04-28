@@ -109,6 +109,20 @@ const StudentComplaints = () => {
                 </div>
               </div>
 
+              {/* Timeline */}
+              {(complaint.history || []).length > 0 && (
+                <div className="mt-4 pt-4 border-t border-gray-50">
+                  <div className="flex flex-col gap-2">
+                    {(complaint.history || []).map((item, index) => (
+                      <div key={item.timestamp || index} className="flex justify-between items-center text-sm">
+                        <p className="font-semibold text-gray-700 capitalize">{item.status}</p>
+                        <p className="text-xs text-gray-500">{new Date(item.timestamp).toLocaleString()}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {reviewingId === complaint._id && (
                 <div className="mt-6 pt-6 border-t border-gray-100 animate-in slide-in-from-top-4 duration-300">
                   <div className="flex flex-col gap-4">
