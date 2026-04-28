@@ -4,6 +4,7 @@ import StudentDashboard from './pages/student/StudentDashboard';
 import StudentComplaints from './pages/student/StudentComplaints';
 import CreateComplaint from './pages/student/CreateComplaint';
 import WorkerDashboard from './pages/worker/WorkerDashboard';
+import WorkerHistory from './pages/worker/WorkerHistory';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminFeedback from './pages/admin/AdminFeedback';
 import AdminComplaints from './pages/admin/AdminComplaints';
@@ -49,6 +50,14 @@ function App() {
           element={
             <ProtectedRoute>
               <WorkerDashboard />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/worker/history" 
+          element={
+            <ProtectedRoute>
+              <WorkerHistory />
             </ProtectedRoute>
           } 
         />

@@ -12,6 +12,7 @@ const DashboardLayout = ({ children }) => {
     ],
     worker: [
       { label: "📊 Dashboard", path: "/worker" },
+      { label: "📜 History", path: "/worker/history" },
     ],
     admin: [
       { label: "📊 Dashboard", path: "/admin" },
