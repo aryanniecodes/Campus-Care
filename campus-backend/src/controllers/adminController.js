@@ -31,9 +31,39 @@ exports.getDashboardSummary = async (req, res) => {
     const pending = await Complaint.countDocuments({ status: "pending" });
     const completed = await Complaint.countDocuments({ status: "completed" });
 
+    const workers = await Worker.find();
+
+    const leaderboard = await Promise.all(
+      workers.map(async (w) => {
+        const comp = await Complaint.countDocuments({
+          assignedWorker: w._id,
+          status: "completed"
+        });
+
+        const assigned = await Complaint.countDocuments({
+          assignedWorker: w._id,
+          status: { $ne: "completed" }
+        });
+
+        return {
+          name: w.name,
+          workerId: w.workerId,
+          completed: comp,
+          assigned,
+          available: w.available
+        };
+      })
+    );
+
     res.json({
       success: true,
-      data: { total, pending, completed }
+      data: { 
+        total, 
+        pending, 
+        completed, 
+        leaderboard,
+        avgRating: 4.5 // placeholder if not calculated
+      }
     });
   } catch (err) {
     res.status(500).json({ success: false, message: err.message });

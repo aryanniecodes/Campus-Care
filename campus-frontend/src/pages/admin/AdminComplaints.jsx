@@ -77,8 +77,14 @@ const AdminComplaints = () => {
 
   const filteredComplaints = complaints.filter(c => {
     if (filter === "all") return true;
-    return c.status === filter;
+    if (filter === "pending") {
+      return c?.status === "pending" || c?.status === "in-progress";
+    }
+    return c?.status === filter;
   });
+
+  console.log("ALL COMPLAINTS:", complaints);
+  console.log("FILTERED (" + filter + "):", filteredComplaints);
 
   if (!complaints) return <p>Loading...</p>;
 
@@ -130,7 +136,7 @@ const AdminComplaints = () => {
                     <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
                       c?.status === "completed" ? "bg-green-100 text-green-600" : "bg-yellow-100 text-yellow-600"
                     }`}>
-                      {c?.status || "pending"}
+                      {c?.status === "in-progress" ? "PENDING" : (c?.status || "pending").toUpperCase()}
                     </span>
                   </div>
                   <p className="text-gray-600 text-sm mb-4 leading-relaxed">{c.description}</p>

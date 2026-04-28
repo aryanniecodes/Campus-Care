@@ -27,7 +27,7 @@ const WorkerDashboard = () => {
 
   const fetchTasks = async () => {
     try {
-      const res = await api.get("/worker/tasks");
+      const res = await api.get("/complaints/worker");
       const tasksData = res?.data?.data || [];
       setTasks(Array.isArray(tasksData) ? tasksData : []);
     } catch (error) {
@@ -61,6 +61,8 @@ const WorkerDashboard = () => {
     fetchTasks();
   }, []);
 
+  const pendingTasks = tasks?.filter(c => c?.status !== "completed") || [];
+
   if (!worker && loading) {
     return (
       <DashboardLayout>
@@ -89,29 +91,29 @@ const WorkerDashboard = () => {
           <h3 className="text-base font-semibold text-gray-700 mb-4">Pending Tasks</h3>
           {loading ? (
             <p className="text-sm text-gray-400">Loading tasks...</p>
-          ) : tasks.length === 0 ? (
+          ) : pendingTasks.length === 0 ? (
             <p className="text-gray-500 text-center py-8">No tasks assigned yet</p>
           ) : (
             <div className="space-y-4">
-              {tasks.filter(t => t.status !== "completed").map(t => (
-                <div key={t._id} className="p-4 rounded-xl border border-gray-50 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 flex justify-between items-center flex-wrap gap-4 group">
+              {pendingTasks.map(t => (
+                <div key={t?._id} className="p-4 rounded-xl border border-gray-50 hover:border-blue-100 hover:bg-blue-50/30 transition-all duration-300 flex justify-between items-center flex-wrap gap-4 group">
                   <div>
-                    <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{t.title}</p>
-                    <p className="text-sm text-gray-600 mt-1">{t.description}</p>
+                    <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{t?.title}</p>
+                    <p className="text-sm text-gray-600 mt-1">{t?.description}</p>
                     <div className="flex items-center gap-3 mt-3">
-                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500">{t.category}</span>
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold uppercase bg-gray-100 text-gray-500">{t?.category}</span>
                       <span className={`px-2 py-0.5 rounded text-[10px] font-bold uppercase ${
-                        t.priority === "high" ? "bg-red-100 text-red-600" : "bg-yellow-100 text-yellow-600"
-                      }`}>{t.priority}</span>
+                        t?.priority === "high" ? "bg-red-100 text-red-600" : "bg-yellow-100 text-yellow-600"
+                      }`}>{t?.priority}</span>
                     </div>
                   </div>
-                  {t.status !== "completed" && (
+                  {t?.status !== "completed" && (
                     <button
-                      disabled={loadingId === t._id}
-                      onClick={() => handleComplete(t._id)}
+                      disabled={loadingId === t?._id}
+                      onClick={() => handleComplete(t?._id)}
                       className="bg-green-600 hover:bg-green-700 text-white px-6 py-2.5 text-sm font-bold rounded-lg transition-all shadow-md shadow-green-900/10 hover:scale-105 active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
                     >
-                      {loadingId === t._id ? "Processing..." : "Mark as Completed"}
+                      {loadingId === t?._id ? "Processing..." : "Mark as Completed"}
                     </button>
                   )}
                 </div>

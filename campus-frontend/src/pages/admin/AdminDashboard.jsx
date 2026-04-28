@@ -49,11 +49,13 @@ const AdminDashboard = () => {
       const compData = complaintsRes?.data?.data || [];
       setComplaints(Array.isArray(compData) ? compData : []);
       
-      if (analyticsRes?.data?.data) {
-        setAnalytics(analyticsRes.data.data);
-      } else {
-        setAnalytics({ total: 0, completed: 0, pending: 0, avgRating: 0 });
-      }
+      const data = analyticsRes?.data?.data || {};
+      setAnalytics({
+        total: data.total || 0,
+        completed: data.completed || 0,
+        pending: data.pending || 0,
+        avgRating: data.avgRating || 0
+      });
       
       const workerData = workerStatsRes?.data?.data || [];
       setWorkerStats(Array.isArray(workerData) ? workerData : []);
@@ -101,11 +103,19 @@ const AdminDashboard = () => {
   const rankedWorkers = [...workerStats].sort((a, b) => b.completed - a.completed);
 
   const chartData = [
-    { name: "Pending", value: analytics.pending },
-    { name: "Completed", value: analytics.completed }
+    { name: "Completed", value: analytics.completed || 0 },
+    { name: "Pending", value: analytics.pending || 0 }
   ];
 
-  const COLORS = ["#facc15", "#22c55e"];
+  const safeChartData =
+    analytics.completed === 0 && analytics.pending === 0
+      ? [
+          { name: "Completed", value: 1 },
+          { name: "Pending", value: 0 }
+        ]
+      : chartData;
+
+  const COLORS = ["#22c55e", "#facc15"];
 
   return (
     <DashboardLayout>
@@ -176,16 +186,17 @@ const AdminDashboard = () => {
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
                   <Pie
-                    data={chartData}
+                    data={safeChartData}
                     cx="50%"
                     cy="50%"
                     innerRadius={70}
                     outerRadius={95}
                     paddingAngle={8}
                     dataKey="value"
+                    nameKey="name"
                     stroke="none"
                   >
-                    {chartData.map((entry, index) => (
+                    {safeChartData.map((entry, index) => (
                       <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                     ))}
                   </Pie>
@@ -204,8 +215,8 @@ const AdminDashboard = () => {
               🏅 Worker Leaderboard
             </h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-              {rankedWorkers.map((w, index) => (
-                <div key={w.id} className="flex justify-between items-center p-5 rounded-2xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
+              {(analytics.leaderboard || []).map((w, index) => (
+                <div key={w.workerId} className="flex justify-between items-center p-5 rounded-2xl border border-gray-50 bg-gray-50/30 hover:bg-white hover:shadow-xl hover:scale-[1.02] transition-all duration-300 group">
                   <div className="flex items-center gap-5">
                     <span className={`w-10 h-10 rounded-xl flex items-center justify-center text-sm font-black shadow-sm ${
                       index === 0 ? "bg-amber-100 text-amber-600 rotate-3" : 
@@ -216,7 +227,7 @@ const AdminDashboard = () => {
                     </span>
                     <div>
                       <p className="font-extrabold text-gray-900 group-hover:text-blue-600 transition-colors">{w.name}</p>
-                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-0.5">Worker ID: {w.id}</p>
+                      <p className="text-[10px] text-gray-400 uppercase font-black tracking-widest mt-0.5">Worker ID: {w.workerId}</p>
                     </div>
                   </div>
                   <div className="flex items-center gap-6">
@@ -225,9 +236,9 @@ const AdminDashboard = () => {
                       <p className="font-black text-green-600">{w.completed}</p>
                     </div>
                     <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest shadow-sm ${
-                      w.tasksAssigned >= 5 ? "bg-red-100 text-red-600" : "bg-green-100 text-green-600"
+                      w.available ? "bg-green-100 text-green-600" : "bg-red-100 text-red-600"
                     }`}>
-                      {w.tasksAssigned >= 5 ? "Busy" : "Available"}
+                      {w.available ? "Available" : "Busy"}
                     </span>
                   </div>
                 </div>

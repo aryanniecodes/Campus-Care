@@ -79,17 +79,21 @@ exports.getAllComplaints = async (req, res) => {
 // 📝 GIVE FEEDBACK
 exports.giveFeedback = async (req, res) => {
   try {
-    const { complaintId } = req.params;
-    const { rating, feedback, isApproved } = req.body;
+    const { id } = req.params;
+    const { rating, feedback } = req.body;
 
-    const complaint = await Complaint.findById(complaintId);
+    const complaint = await Complaint.findById(id);
+
     if (!complaint) {
-      return res.status(404).json({ message: "Complaint not found" });
+      return res.status(200).json({
+        success: false,
+        message: "Complaint not found"
+      });
     }
 
-    if (rating !== undefined) complaint.rating = rating;
-    if (feedback !== undefined) complaint.feedback = feedback;
-    if (isApproved !== undefined) complaint.isApproved = isApproved;
+    complaint.feedback = feedback;
+    complaint.rating = rating;
+    complaint.isApproved = true; // Mark as approved once feedback is given
 
     await complaint.save();
 
@@ -98,14 +102,14 @@ exports.giveFeedback = async (req, res) => {
       type: "feedback"
     });
 
-    res.status(200).json({
-      message: "Feedback submitted",
-      complaint
+    return res.json({
+      success: true,
+      message: "Feedback submitted"
     });
 
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: error.message });
+    console.error("FEEDBACK ERROR:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -131,13 +135,26 @@ exports.getComplaintsByStatus = async (req, res) => {
 exports.getDashboardSummary = async (req, res) => {
   try {
     const total = await Complaint.countDocuments();
-    const completed = await Complaint.countDocuments({ status: "completed" });
-    const pending = await Complaint.countDocuments({ status: "pending" });
 
-    res.status(200).json({ total, completed, pending });
+    const completed = await Complaint.countDocuments({
+      status: "completed"
+    });
+
+    const pending = await Complaint.countDocuments({
+      status: { $ne: "completed" }
+    });
+
+    res.json({
+      success: true,
+      data: {
+        total,
+        completed,
+        pending
+      }
+    });
   } catch (error) {
     console.error("Error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -161,9 +178,39 @@ exports.getAssignedComplaints = async (req, res) => {
     const complaints = await Complaint.find({
       assignedWorker: req.user.id
     }).sort({ createdAt: -1 });
-    res.json({ success: true, data: complaints });
+
+    const formatted = complaints.map(c => ({
+      ...c.toObject(),
+      assignedTo: c.assignedWorker
+    }));
+
+    res.json({ success: true, data: formatted });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.getWorkerComplaints = async (req, res) => {
+  try {
+    const workerId = req.user.id;
+
+    const complaints = await Complaint.find({
+      assignedWorker: workerId
+    }).sort({ createdAt: -1 });
+
+    const formatted = complaints.map(c => ({
+      ...c.toObject(),
+      assignedTo: c.assignedWorker
+    }));
+
+    res.json({
+      success: true,
+      data: formatted
+    });
+
+  } catch (error) {
+    console.error("WORKER FETCH ERROR:", error);
+    res.json({ success: true, data: [] });
   }
 };
 
@@ -255,7 +302,8 @@ exports.getAnalytics = async (req, res) => {
     }
     const total = await Complaint.countDocuments();
     const completed = await Complaint.countDocuments({ status: "completed" });
-    const pending = await Complaint.countDocuments({ status: "pending" });
+    const pending = await Complaint.countDocuments({ status: { $ne: "completed" } });
+    
     const ratings = await Complaint.find({ rating: { $exists: true, $ne: null } });
     const avgRating = ratings.length > 0
       ? ratings.reduce((sum, c) => sum + c.rating, 0) / ratings.length

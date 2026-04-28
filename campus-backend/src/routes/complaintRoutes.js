@@ -5,6 +5,7 @@ const {
   getAllComplaints, 
   getMyComplaints,
   getAssignedComplaints,
+  getWorkerComplaints,
   deleteComplaint,
   giveFeedback,
   getComplaintsByStatus,
@@ -28,6 +29,7 @@ router.get("/all", protect, getAllComplaints);
 
 // GET /api/complaints/assigned (Worker)
 router.get("/assigned", protect, getAssignedComplaints);
+router.get("/worker", protect, getWorkerComplaints);
 
 // DELETE /api/complaints/:id (Admin)
 router.delete("/:id", protect, deleteComplaint);
@@ -38,8 +40,8 @@ router.get("/summary", getDashboardSummary);
 // GET /api/complaints/status/:status
 router.get("/status/:status", getComplaintsByStatus);
 
-// PUT /api/complaints/feedback/:id
-router.put("/feedback/:id", protect, giveFeedback);
+// PUT /api/complaints/:id/feedback
+router.put("/:id/feedback", protect, giveFeedback);
 
 // GET /api/complaints/feedback (Admin)
 router.get("/feedback", protect, getAllFeedback);

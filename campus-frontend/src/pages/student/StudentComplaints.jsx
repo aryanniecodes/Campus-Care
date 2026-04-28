@@ -34,7 +34,7 @@ const StudentComplaints = () => {
     
     try {
       setIsSubmitting(true);
-      await api.put(`/complaints/feedback/${id}`, { rating, feedback });
+      await api.put(`/complaints/${id}/feedback`, { rating, feedback });
       toast.success("Feedback submitted successfully!");
       setReviewingId(null);
       setFeedback("");
