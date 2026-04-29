@@ -14,13 +14,17 @@ const {
   assignWorker,
   updateStatus,
   getAnalytics,
-  getHighPriorityComplaints
+  getHighPriorityComplaints,
+  getEscalatedComplaints
 } = require("../controllers/complaintController");
 const upload = require("../middlewares/upload");
 const { protect } = require("../middlewares/authMiddleware");
 
 // GET /api/complaints/high-priority (Admin - Public for Demo)
 router.get("/high-priority", getHighPriorityComplaints);
+
+// GET /api/complaints/escalated (Admin - Public for Demo)
+router.get("/escalated", getEscalatedComplaints);
 
 // POST /api/complaints
 router.post("/", protect, upload.single("image"), createComplaint);

@@ -109,18 +109,27 @@ const StudentComplaints = () => {
             <div key={complaint._id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col hover:shadow-xl hover:scale-[1.01] transition-all duration-300">
               <div className="flex justify-between items-center w-full">
                 <div>
-                  <h4 className="font-bold text-lg text-gray-900">{complaint.title}</h4>
-                  <p className="text-sm text-gray-500 mt-1">
-                    <span className="capitalize">Priority: {complaint.priority}</span>
-                    <span className="mx-2">•</span>
-                    <span className="capitalize">{complaint.category} <span className="text-[10px] text-gray-400 lowercase italic">(AI detected)</span></span>
-                  </p>
+                <div className="flex flex-col gap-3">
+                  <h4 className="font-bold text-xl text-gray-900 leading-tight">{complaint.title}</h4>
+                  <div className="flex flex-wrap gap-2">
+                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${
+                      complaint.priority === "high" ? "bg-red-100 text-red-600 border-red-200" :
+                      complaint.priority === "medium" ? "bg-yellow-100 text-yellow-600 border-yellow-200" :
+                      "bg-gray-100 text-gray-600 border-gray-200"
+                    }`}>
+                      {complaint.priority}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 border border-blue-200">
+                      {complaint.category}
+                    </span>
+                  </div>
+                </div>
                 </div>
                 <div className="flex items-center gap-4">
-                  <span className={`px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
+                  <span className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border ${
                     complaint.status === "completed" 
-                    ? "bg-green-100 text-green-700" 
-                    : "bg-yellow-100 text-yellow-700"
+                    ? "bg-green-200 text-green-800 border-green-300" 
+                    : "bg-yellow-200 text-yellow-800 border-yellow-300"
                   }`}>
                     {complaint.status === "completed" ? "Completed" : "In Progress"}
                   </span>

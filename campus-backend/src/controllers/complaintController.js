@@ -369,3 +369,22 @@ exports.getHighPriorityComplaints = async (req, res) => {
     res.status(500).json({ success: false, message: error.message });
   }
 };
+
+// 🚨 GET ESCALATED COMPLAINTS (>24h)
+exports.getEscalatedComplaints = async (req, res) => {
+  try {
+    const complaints = await Complaint.find({
+      status: { $ne: "completed" }
+    }).sort({ createdAt: -1 });
+
+    const now = new Date();
+    const escalated = complaints.filter(c => {
+      const hours = (now - new Date(c.createdAt)) / (1000 * 60 * 60);
+      return hours > 24;
+    });
+
+    res.json({ success: true, data: escalated });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
+  }
+};

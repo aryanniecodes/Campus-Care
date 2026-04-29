@@ -162,20 +162,32 @@ const AdminComplaints = () => {
               <div key={c._id} className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 flex flex-col md:flex-row justify-between gap-6 hover:shadow-lg transition-all duration-300 group">
                 <div className="flex-1">
                   <div className="flex items-center gap-3 mb-2">
-                    <h4 className="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors">{c.title}</h4>
-                    <span className={`px-2 py-0.5 rounded text-[10px] font-black uppercase tracking-widest ${
-                      c?.status === "completed" ? "bg-green-100 text-green-700" : "bg-yellow-100 text-yellow-700"
-                    }`}>
-                      {c?.status === "completed" ? "Completed" : "In Progress"}
-                    </span>
+                    <div className="flex flex-col gap-2">
+                      <h4 className="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors leading-tight">{c.title}</h4>
+                      <div className="flex gap-2">
+                        <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${
+                          c?.status === "completed" ? "bg-green-200 text-green-800 border-green-300" : "bg-yellow-200 text-yellow-800 border-yellow-300"
+                        }`}>
+                          {c?.status === "completed" ? "Completed" : "In Progress"}
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                  <p className="text-gray-600 text-sm mb-4 leading-relaxed">{c.description}</p>
+                  <p className="text-gray-600 text-sm mb-6 leading-relaxed">{c.description}</p>
                   
-                  <div className="flex flex-wrap gap-4 text-xs font-bold uppercase tracking-wider text-gray-400">
-                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Category: {c.category} <span className="lowercase italic font-normal">(AI detected)</span></span>
-                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100">Priority: {c.priority}</span>
-                    <span className="bg-gray-50 px-2 py-1 rounded border border-gray-100 flex items-center gap-2">
-                      Assigned To: 
+                  <div className="flex flex-wrap gap-2">
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 border border-blue-200">
+                      {c.category}
+                    </span>
+                    <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${
+                      c.priority === "high" ? "bg-red-100 text-red-600 border-red-200" :
+                      c.priority === "medium" ? "bg-yellow-100 text-yellow-600 border-yellow-200" :
+                      "bg-gray-100 text-gray-600 border-gray-200"
+                    }`}>
+                      {c.priority}
+                    </span>
+                    <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-gray-50 text-gray-500 border border-gray-200 flex items-center gap-1.5">
+                      Assigned: 
                       <span className={c.assignedWorker ? "text-blue-600" : "text-orange-500"}>
                         {c.assignedWorker?.name || "Unassigned"}
                       </span>

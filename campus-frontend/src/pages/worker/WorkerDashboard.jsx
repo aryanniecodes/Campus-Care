@@ -152,13 +152,15 @@ const WorkerDashboard = () => {
                     </div>
                     
                     <div className="flex flex-wrap gap-2 mb-6">
-                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-gray-100 text-gray-500 border border-gray-200">
-                        {t?.category} <span className="lowercase italic font-normal text-gray-400">(AI)</span>
+                      <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 border border-blue-200">
+                        {t?.category}
                       </span>
-                      <span className={`px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest border ${
-                        t?.priority === "high" ? "bg-red-50 text-red-600 border-red-100" : "bg-yellow-50 text-yellow-600 border-yellow-100"
+                      <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${
+                        t?.priority === "high" ? "bg-red-100 text-red-600 border-red-200" :
+                        t?.priority === "medium" ? "bg-yellow-100 text-yellow-600 border-yellow-200" :
+                        "bg-gray-100 text-gray-600 border-gray-200"
                       }`}>{t?.priority}</span>
-                      <span className="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-widest bg-blue-50 text-blue-600 border border-blue-100">
+                      <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-yellow-200 text-yellow-800 border border-yellow-300">
                         IN PROGRESS
                       </span>
                     </div>

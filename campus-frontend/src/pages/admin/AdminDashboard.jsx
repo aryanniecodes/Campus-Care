@@ -5,6 +5,7 @@ import api from "../../services/api";
 import toast from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import PriorityBanner from "../../components/PriorityBanner";
+import EscalationBanner from "../../components/EscalationBanner";
 
 const StatCard = ({ label, value, color = "text-gray-900", icon }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:scale-105 transition-all duration-300">
@@ -157,6 +158,7 @@ const AdminDashboard = () => {
         </div>
 
         <PriorityBanner />
+        <EscalationBanner />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <StatCard label="Total Requests" value={analytics.total} icon="📋" />
