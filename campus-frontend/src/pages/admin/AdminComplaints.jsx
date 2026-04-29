@@ -40,7 +40,7 @@ const AdminComplaints = () => {
       });
 
     } catch (error) {
-      // console.error("Error fetching data:", error);
+      // Silent error for admin panel refresh
     } finally {
       setLoading(false);
     }

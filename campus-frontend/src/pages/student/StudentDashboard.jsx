@@ -31,8 +31,6 @@ const StudentDashboard = () => {
         pending: safeData.filter(c => c?.status !== "completed").length,
         completed: safeData.filter(c => c?.status === "completed").length
       });
-    } catch (error) {
-      // console.log("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }

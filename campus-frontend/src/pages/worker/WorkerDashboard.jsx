@@ -18,8 +18,6 @@ const WorkerDashboard = () => {
   const [message, setMessage] = useState("");
   const [isError, setIsError] = useState(false);
 
-  // console.log("Worker tasks:", tasks);
-
   const showFeedback = (msg, error = false) => {
     setMessage(msg);
     setIsError(error);
@@ -35,7 +33,7 @@ const WorkerDashboard = () => {
         return prev;
       });
     } catch (error) {
-      // console.log("Error fetching worker stats:", error);
+      // Failed silently in background refresh
     }
   };
 
@@ -48,7 +46,6 @@ const WorkerDashboard = () => {
         return prev;
       });
     } catch (error) {
-      // console.error("TASK FETCH ERROR:", error);
       setTasks([]);
     } finally {
       setLoading(false);
@@ -69,11 +66,9 @@ const WorkerDashboard = () => {
         )
       );
       
-      // Refresh data to ensure full sync
       await fetchTasks();
       await fetchWorker();
     } catch (error) {
-      // console.log(error);
       showFeedback("Failed to complete task", true);
       toast.error("Failed to complete task");
     } finally {
@@ -124,7 +119,7 @@ const WorkerDashboard = () => {
         {/* Top Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
           <StatCard label="Assigned Tasks" value={worker?.assignedTasks || 0} icon="📋" />
-          <StatCard label="Completed Tasks" value={worker?.completedTasks || 0} color="text-green-600" icon="✅" />
+          <StatCard label="Completed Tasks" value={completedTasks.length} color="text-green-600" icon="✅" />
           <StatCard label="Availability" value={worker?.available ? "Available" : "Busy"} color={worker?.available ? "text-green-600" : "text-red-600"} icon="⚡" />
         </div>
 

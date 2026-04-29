@@ -21,8 +21,6 @@ const Login = () => {
         role
       };
 
-      // console.log("Sending login payload:", payload);
-
       const response = await api.post("/auth/login", payload);
 
       if (response.data.success) {
@@ -47,7 +45,6 @@ const Login = () => {
         else if (response.data.data.role === "admin") navigate("/admin");
       }
     } catch (error) {
-      // console.error("Login Error:", error);
       toast.error(error.response?.data?.message || "Login failed. Check your credentials.");
     } finally {
       setIsLoading(false);

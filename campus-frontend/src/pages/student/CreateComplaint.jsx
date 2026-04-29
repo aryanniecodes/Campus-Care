@@ -56,7 +56,6 @@ const CreateComplaint = () => {
       toast.success("Complaint submitted successfully");
       setTimeout(() => navigate("/student/complaints"), 1500);
     } catch (error) {
-      // console.log("CREATE ERROR:", error);
       showFeedback("Failed to submit complaint", true);
       toast.error("Failed to submit complaint. Please try again.");
     } finally {

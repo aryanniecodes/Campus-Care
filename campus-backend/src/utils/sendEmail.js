@@ -24,7 +24,7 @@ const sendEmail = async (to, subject, text) => {
     console.log(`Email sent to ${to}`);
     */
   } catch (error) {
-    // console.error("Email sending failed:", error);
+    // Silent fail if email service is down in demo
   }
 };
 

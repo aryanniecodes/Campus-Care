@@ -33,7 +33,7 @@ const StudentComplaints = () => {
         return prev;
       });
     } catch (error) {
-      // console.error("Error fetching complaints:", error);
+      // Silent error for background sync
     } finally {
       setLoading(false);
     }

@@ -22,7 +22,6 @@ const WorkerHistory = () => {
         return prev;
       });
     } catch (error) {
-      // console.error("TASK FETCH ERROR:", error);
       setTasks([]);
     } finally {
       setLoading(false);

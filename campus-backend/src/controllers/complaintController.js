@@ -74,8 +74,7 @@ exports.createComplaint = async (req, res) => {
     res.json({ success: true, data: complaint });
 
   } catch (error) {
-    console.error("CREATE ERROR:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -89,7 +88,6 @@ exports.getAllComplaints = async (req, res) => {
 
     res.json({ success: true, data: complaints });
   } catch (error) {
-    console.error(error);
     res.json({ success: true, data: [] });
   }
 };
@@ -127,7 +125,6 @@ exports.giveFeedback = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("FEEDBACK ERROR:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -145,8 +142,7 @@ exports.getComplaintsByStatus = async (req, res) => {
     
     res.status(200).json({ success: true, data: formatted });
   } catch (error) {
-    console.error("Error:", error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -172,7 +168,6 @@ exports.getDashboardSummary = async (req, res) => {
       }
     });
   } catch (error) {
-    console.error("Error:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -186,7 +181,6 @@ exports.getMyComplaints = async (req, res) => {
 
     res.json({ success: true, data: complaints });
   } catch (error) {
-    console.error(error);
     res.json({ success: true, data: [] });
   }
 };
@@ -228,7 +222,6 @@ exports.getWorkerComplaints = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("WORKER FETCH ERROR:", error);
     res.json({ success: true, data: [] });
   }
 };
@@ -259,7 +252,7 @@ exports.getAllFeedback = async (req, res) => {
 
     res.json({ success: true, data: feedback });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -357,6 +350,22 @@ exports.getAnalytics = async (req, res) => {
       }
     });
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// 🚩 GET HIGH PRIORITY COMPLAINTS
+exports.getHighPriorityComplaints = async (req, res) => {
+  try {
+    const complaints = await Complaint.find({
+      priority: "high",
+      status: { $ne: "completed" }
+    })
+    .sort({ createdAt: -1 })
+    .limit(5);
+
+    res.json({ success: true, data: complaints });
+  } catch (error) {
+    res.status(500).json({ success: false, message: error.message });
   }
 };

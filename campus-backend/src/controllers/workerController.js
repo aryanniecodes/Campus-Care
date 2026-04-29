@@ -14,7 +14,7 @@ exports.getWorkerMe = async (req, res) => {
     }
 
     const completedTasks = await Complaint.countDocuments({ 
-      assignedTo: req.user.id, 
+      assignedWorker: req.user.id, 
       status: "completed" 
     });
 
@@ -104,7 +104,6 @@ exports.completeTask = async (req, res) => {
         worker.tasksAssigned += 1;
         
         await pendingComplaint.save();
-        // console.log("AUTO ASSIGNED FROM QUEUE:", pendingComplaint._id);
 
         // Notify Worker (the one who just completed a task and got a new one)
         await Notification.create({
@@ -142,18 +141,14 @@ Thank you for your patience.
 
       const testEmail = "aryanicodes@gmail.com";
       if (process.env.ENABLE_EMAIL === "true") {
-        // console.log("SENDING COMPLETION EMAIL TO:", testEmail);
         await sendEmail(testEmail, "Complaint Completed", message);
-      } else {
-        // console.log("EMAIL DISABLED (DEV MODE)");
       }
     }
 
     res.json({ success: true, message: "Task marked as completed" });
 
   } catch (error) {
-    // console.log(error);
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -199,7 +194,7 @@ exports.getAllWorkers = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -235,6 +230,6 @@ exports.getWorkerStats = async (req, res) => {
     });
 
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    res.status(500).json({ success: false, message: error.message });
   }
 };

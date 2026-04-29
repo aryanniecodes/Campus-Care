@@ -4,6 +4,7 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
+import PriorityBanner from "../../components/PriorityBanner";
 
 const StatCard = ({ label, value, color = "text-gray-900", icon }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:scale-105 transition-all duration-300">
@@ -72,8 +73,6 @@ const AdminDashboard = () => {
         if (JSON.stringify(prev) !== JSON.stringify(workerData)) return workerData;
         return prev;
       });
-    } catch (error) {
-      // console.log("Error fetching dashboard data:", error);
     } finally {
       setLoading(false);
     }
@@ -110,7 +109,6 @@ const AdminDashboard = () => {
       setComplaints((prev) => prev.filter((c) => c._id !== id));
       toast.success("Complaint deleted successfully");
     } catch (error) {
-      // console.log("Delete error:", error);
       toast.error("Failed to delete complaint");
     }
   };
@@ -120,7 +118,6 @@ const AdminDashboard = () => {
     : null;
 
   const rankedWorkers = [...(workerStats || [])].sort((a, b) => (b.completed || 0) - (a.completed || 0));
-  // console.log("Workers:", workerStats);
 
   const chartData = [
     { name: "Completed", value: analytics.completed || 0 },
@@ -158,6 +155,8 @@ const AdminDashboard = () => {
             </div>
           )}
         </div>
+
+        <PriorityBanner />
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
           <StatCard label="Total Requests" value={analytics.total} icon="📋" />
