@@ -29,6 +29,15 @@ const Login = () => {
         // Store auth data
         localStorage.setItem("token", response.data.data.token);
         localStorage.setItem("role", response.data.data.role);
+        
+        // Store user specific ID for notifications
+        if (response.data.data.role === "admin") {
+          localStorage.setItem("userId", "admin");
+        } else if (response.data.data.role === "worker") {
+          localStorage.setItem("userId", response.data.data.user.workerId || response.data.data.user.id);
+        } else {
+          localStorage.setItem("userId", response.data.data.user.rollNo || response.data.data.user.id);
+        }
 
         toast.success("Welcome back! Login successful.");
 

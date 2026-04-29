@@ -1,8 +1,11 @@
 import { useNavigate, NavLink } from "react-router-dom";
+import NotificationBell from "../components/NotificationBell";
 
 const DashboardLayout = ({ children }) => {
   const navigate = useNavigate();
   const role = localStorage.getItem("role");
+  const userId = localStorage.getItem("userId");
+  const currentUser = { role, id: userId, workerId: role === 'worker' ? userId : null };
 
   const navLinks = {
     student: [
@@ -75,8 +78,15 @@ const DashboardLayout = ({ children }) => {
       </aside>
 
       {/* ── Main Content Area ── */}
-      <main className="flex-1 overflow-y-auto p-8">
-        <div className="max-w-7xl mx-auto">
+      <main className="flex-1 overflow-y-auto">
+        {/* Top Header */}
+        <header className="bg-white border-b border-gray-100 px-8 py-4 flex justify-end items-center shadow-sm sticky top-0 z-40">
+          <NotificationBell 
+            user={role === 'worker' ? { id: currentUser?.workerId, role: 'worker' } : currentUser} 
+          />
+        </header>
+
+        <div className="p-8 max-w-7xl mx-auto">
           {children}
         </div>
       </main>

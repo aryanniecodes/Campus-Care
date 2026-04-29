@@ -3,6 +3,7 @@ const Worker = require("../models/Worker");
 const Student = require("../models/Student");
 const sendEmail = require("../utils/sendEmail");
 const Activity = require("../models/Activity");
+const Notification = require("../models/notification.model.js");
 
 // 1. Get Logged In Worker (Me)
 exports.getWorkerMe = async (req, res) => {
@@ -104,6 +105,13 @@ exports.completeTask = async (req, res) => {
         
         await pendingComplaint.save();
         // console.log("AUTO ASSIGNED FROM QUEUE:", pendingComplaint._id);
+
+        // Notify Worker (the one who just completed a task and got a new one)
+        await Notification.create({
+          userId: worker.workerId,
+          role: "worker",
+          message: "New task assigned to you"
+        });
       }
 
       if (worker.tasksAssigned < 5) {
@@ -111,6 +119,13 @@ exports.completeTask = async (req, res) => {
       }
       await worker.save();
     }
+
+    // Notify Student
+    await Notification.create({
+      userId: complaint.studentId,
+      role: "student",
+      message: "Your complaint has been resolved"
+    });
 
     // Send email to student
     const student = await Student.findById(complaint.studentId);

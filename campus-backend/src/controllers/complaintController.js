@@ -3,6 +3,7 @@ const Complaint = require("../models/Complaint");
 const Worker = require("../models/Worker");
 const sendEmail = require("../utils/sendEmail");
 const Activity = require("../models/Activity");
+const Notification = require("../models/notification.model.js");
 
 // 🔥 CREATE COMPLAINT
 exports.createComplaint = async (req, res) => {
@@ -53,6 +54,22 @@ exports.createComplaint = async (req, res) => {
       message: "New complaint submitted",
       type: "complaint"
     });
+
+    // Notify Admin
+    await Notification.create({
+      userId: "admin",
+      role: "admin",
+      message: "New complaint submitted"
+    });
+
+    // Notify Worker if assigned
+    if (worker) {
+      await Notification.create({
+        userId: worker.workerId,
+        role: "worker",
+        message: "New task assigned to you"
+      });
+    }
 
     res.json({ success: true, data: complaint });
 
@@ -274,6 +291,13 @@ exports.assignWorker = async (req, res) => {
       type: "assignment"
     });
 
+    // Notify Worker
+    await Notification.create({
+      userId: worker.workerId,
+      role: "worker",
+      message: "New task assigned to you"
+    });
+
     res.json({ success: true, message: "Worker assigned successfully", data: complaint });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -292,6 +316,16 @@ exports.updateStatus = async (req, res) => {
     complaint.status = status;
     complaint.history.push({ status, timestamp: new Date() });
     await complaint.save();
+
+    // Notify Student if completed
+    if (status === "completed") {
+      await Notification.create({
+        userId: complaint.studentId,
+        role: "student",
+        message: "Your complaint has been resolved"
+      });
+    }
+
     res.json({ success: true, message: "Status updated successfully", data: complaint });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
