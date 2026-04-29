@@ -6,6 +6,7 @@ import toast from "react-hot-toast";
 import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer, Legend } from "recharts";
 import PriorityBanner from "../../components/PriorityBanner";
 import EscalationBanner from "../../components/EscalationBanner";
+import SLATimer from "../../components/SLATimer";
 
 const StatCard = ({ label, value, color = "text-gray-900", icon }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:scale-105 transition-all duration-300">
@@ -283,6 +284,7 @@ const AdminDashboard = () => {
                   <div>
                     <p className="font-black text-gray-900 group-hover:text-blue-600 transition-colors truncate max-w-[180px]">{c.title}</p>
                     <div className="flex items-center gap-2 mt-1.5">
+                      <SLATimer createdAt={c?.createdAt} status={c?.status} />
                       <span className="text-[10px] font-black text-gray-400 uppercase tracking-widest">{c.category}</span>
                       <span className="w-1 h-1 bg-gray-300 rounded-full"></span>
                       <span className={`text-[10px] font-black uppercase tracking-widest ${

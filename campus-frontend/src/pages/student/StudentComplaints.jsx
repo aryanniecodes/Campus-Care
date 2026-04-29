@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import SLATimer from "../../components/SLATimer";
 
 const StudentComplaints = () => {
   const navigate = useNavigate();
@@ -126,6 +127,7 @@ const StudentComplaints = () => {
                 </div>
                 </div>
                 <div className="flex items-center gap-4">
+                  <SLATimer createdAt={complaint?.createdAt} status={complaint?.status} />
                   <span className={`px-3 py-1.5 rounded-lg text-xs font-black uppercase tracking-wider border ${
                     complaint.status === "completed" 
                     ? "bg-green-200 text-green-800 border-green-300" 

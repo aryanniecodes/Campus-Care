@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import SLATimer from "../../components/SLATimer";
 
 const StatCard = ({ label, value, color = "text-gray-900" }) => (
   <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:scale-105 transition-all duration-300">
@@ -152,6 +153,7 @@ const WorkerDashboard = () => {
                     </div>
                     
                     <div className="flex flex-wrap gap-2 mb-6">
+                      <SLATimer createdAt={t?.createdAt} status={t?.status} />
                       <span className="px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest bg-blue-100 text-blue-700 border border-blue-200">
                         {t?.category}
                       </span>

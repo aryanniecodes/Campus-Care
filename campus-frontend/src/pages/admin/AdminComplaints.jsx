@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
+import SLATimer from "../../components/SLATimer";
 
 const AdminComplaints = () => {
   const [complaints, setComplaints] = useState([]);
@@ -165,6 +166,7 @@ const AdminComplaints = () => {
                     <div className="flex flex-col gap-2">
                       <h4 className="font-bold text-xl text-gray-900 group-hover:text-blue-600 transition-colors leading-tight">{c.title}</h4>
                       <div className="flex gap-2">
+                        <SLATimer createdAt={c?.createdAt} status={c?.status} />
                         <span className={`px-2.5 py-1 rounded-md text-[10px] font-black uppercase tracking-widest border ${
                           c?.status === "completed" ? "bg-green-200 text-green-800 border-green-300" : "bg-yellow-200 text-yellow-800 border-yellow-300"
                         }`}>
