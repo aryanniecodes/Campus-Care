@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo, memo } from 'react';
 import DashboardLayout from '../../layouts/DashboardLayout';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
@@ -14,7 +14,8 @@ const Analytics = () => {
         setData(res.data.data);
       }
     } catch (error) {
-      toast.error("Failed to load analytics");
+      // Interceptor handles the toast, we just log for dev
+      console.error("Analytics fetch failed");
     } finally {
       setLoading(false);
     }
@@ -24,11 +25,26 @@ const Analytics = () => {
     fetchAnalytics();
   }, []);
 
+  const completionRate = useMemo(() => 
+    data?.total > 0 ? Math.round((data.completed / data.total) * 100) : 0, 
+  [data]);
+
+  const pendingRate = useMemo(() => 
+    data?.total > 0 ? Math.round((data.pending / data.total) * 100) : 0, 
+  [data]);
+
   if (loading) {
     return (
       <DashboardLayout>
-        <div className="flex items-center justify-center h-64">
-          <p className="text-gray-500 font-medium animate-pulse text-lg">Loading analytics...</p>
+        <div className="space-y-6 max-w-7xl mx-auto px-4 py-8 animate-pulse">
+          <div className="h-8 w-48 bg-gray-100 rounded mb-8"></div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {[1, 2, 3].map(i => <div key={i} className="h-24 bg-gray-50 rounded-2xl"></div>)}
+          </div>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-8">
+             <div className="h-64 bg-gray-50 rounded-2xl"></div>
+             <div className="h-64 bg-gray-50 rounded-2xl"></div>
+          </div>
         </div>
       </DashboardLayout>
     );
@@ -37,90 +53,95 @@ const Analytics = () => {
   if (!data) {
     return (
       <DashboardLayout>
-        <div className="bg-white rounded-2xl p-16 shadow-sm border border-gray-100 text-center">
-          <span className="text-3xl">📊</span>
-          <p className="text-gray-500 font-bold text-xl uppercase tracking-tight mt-4">No analytics data available</p>
-          <p className="text-gray-400 mt-2">Complaints need to be submitted first.</p>
+        <div className="max-w-7xl mx-auto px-4 py-20 text-center">
+          <div className="bg-white rounded-3xl p-16 shadow-sm border border-gray-100">
+            <span className="text-4xl">📊</span>
+            <h3 className="text-xl font-bold text-gray-900 mt-6 uppercase tracking-tight">No Insights Available</h3>
+            <p className="text-gray-500 mt-2 max-w-md mx-auto">Analytics require at least one submitted complaint to generate system-wide performance reports.</p>
+          </div>
         </div>
       </DashboardLayout>
     );
   }
 
-  const completionRate = data.total > 0 ? Math.round((data.completed / data.total) * 100) : 0;
-  const pendingRate = data.total > 0 ? Math.round((data.pending / data.total) * 100) : 0;
-
   return (
     <DashboardLayout>
-      <div className="space-y-6">
+      <div className="space-y-8 max-w-7xl mx-auto px-4 py-6 pb-20">
 
         {/* ── Page Header ── */}
-        <div>
-          <h2 className="text-2xl font-bold text-gray-900 leading-tight">Analytics</h2>
-          <p className="text-gray-500 mt-1 text-sm">Overview of campus maintenance operations.</p>
+        <div className="flex justify-between items-end border-b border-gray-100 pb-6">
+          <div>
+            <h2 className="text-2xl font-extrabold text-gray-900 tracking-tight">Performance Analytics</h2>
+            <p className="text-gray-500 mt-1 text-sm font-medium">Deep-dive into operational efficiency and worker performance.</p>
+          </div>
+          <button 
+            onClick={fetchAnalytics}
+            className="text-[10px] font-black uppercase tracking-widest text-blue-600 hover:text-blue-700 bg-blue-50 px-4 py-2 rounded-full transition-all"
+          >
+            Refresh Data
+          </button>
         </div>
 
-        {/* ── KPI Cards ── */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 transition-all duration-200 ease-in-out hover:shadow-md hover:-translate-y-1">
-            <p className="text-xs text-gray-500 font-black uppercase tracking-widest mb-2">Total</p>
-            <p className="text-2xl font-semibold text-gray-900">{data.total}</p>
+        {/* ── KPI Grid ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all group">
+            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3">Total Volume</p>
+            <p className="text-3xl font-black text-gray-900 group-hover:text-blue-600 transition-colors">{data.total}</p>
+            <p className="text-[10px] text-gray-400 mt-2 font-medium">Accumulated across all hostels</p>
           </div>
 
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 transition-all duration-200 ease-in-out hover:shadow-md hover:-translate-y-1">
-            <p className="text-xs text-gray-500 font-black uppercase tracking-widest mb-2">Completed</p>
-            <p className="text-2xl font-semibold text-green-600">{data.completed}</p>
-            <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
-              <div
-                className="bg-green-500 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${completionRate}%` }}
-              />
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all group">
+            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 text-green-600/60">Resolution Velocity</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-black text-green-600">{data.completed}</p>
+              <span className="text-xs font-bold text-gray-400 uppercase">Resolved</span>
             </div>
-            <p className="text-xs text-gray-400 mt-1">{completionRate}% resolution rate</p>
-          </div>
-
-          <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 transition-all duration-200 ease-in-out hover:shadow-md hover:-translate-y-1">
-            <p className="text-xs text-gray-500 font-black uppercase tracking-widest mb-2">Pending</p>
-            <p className="text-2xl font-semibold text-yellow-600">{data.pending}</p>
-            <div className="mt-3 w-full bg-gray-100 rounded-full h-1.5">
-              <div
-                className="bg-yellow-400 h-1.5 rounded-full transition-all duration-500"
-                style={{ width: `${pendingRate}%` }}
-              />
+            <div className="mt-4 w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-green-500 h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${completionRate}%` }} />
             </div>
-            <p className="text-xs text-gray-400 mt-1">{pendingRate}% still open</p>
+            <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-tighter">{completionRate}% total success rate</p>
           </div>
 
+          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 hover:shadow-lg transition-all group">
+            <p className="text-[10px] text-gray-400 font-black uppercase tracking-widest mb-3 text-yellow-600/60">Queue Density</p>
+            <div className="flex items-baseline gap-2">
+              <p className="text-3xl font-black text-yellow-600">{data.pending}</p>
+              <span className="text-xs font-bold text-gray-400 uppercase">Awaiting</span>
+            </div>
+            <div className="mt-4 w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+              <div className="bg-yellow-400 h-full rounded-full transition-all duration-700 ease-out" style={{ width: `${pendingRate}%` }} />
+            </div>
+            <p className="text-[10px] text-gray-400 mt-2 font-bold uppercase tracking-tighter">{pendingRate}% of load remaining</p>
+          </div>
         </div>
 
-        {/* ── Bottom Grid ── */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-
-          {/* Category Distribution */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 transition-all duration-200 ease-in-out hover:shadow-md hover:-translate-y-1">
-            <h3 className="font-bold text-gray-900 text-sm uppercase tracking-widest mb-5">📂 Category Distribution</h3>
-
+        {/* ── Distribution Charts ── */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-xl transition-all">
+            <h3 className="font-black text-gray-900 text-xs uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-blue-500 rounded-full"></span>
+              Category Heatmap
+            </h3>
             {Object.keys(data.categories).length === 0 ? (
-              <p className="text-gray-400 text-sm italic text-center py-8">No categories recorded yet.</p>
+              <div className="py-20 text-center text-gray-400 text-xs italic">No data detected</div>
             ) : (
-              <div className="space-y-4">
+              <div className="space-y-6">
                 {Object.entries(data.categories)
                   .sort(([, a], [, b]) => b - a)
                   .map(([cat, count]) => {
                     const pct = data.total > 0 ? Math.round((count / data.total) * 100) : 0;
                     return (
-                      <div key={cat}>
-                        <div className="flex justify-between items-center mb-1.5">
-                          <span className="text-sm font-medium text-gray-700 uppercase tracking-wider">{cat}</span>
-                          <span className="text-xs font-bold text-blue-600">{pct}%
-                            <span className="text-gray-400 font-normal ml-1">({count})</span>
-                          </span>
+                      <div key={cat} className="group">
+                        <div className="flex justify-between items-end mb-2">
+                          <span className="text-xs font-black text-gray-700 uppercase tracking-widest group-hover:text-blue-600 transition-colors">{cat}</span>
+                          <div className="text-right">
+                            <span className="text-[10px] font-black text-blue-600 bg-blue-50 px-2 py-0.5 rounded-md mr-2">{pct}%</span>
+                            <span className="text-[10px] font-bold text-gray-400 uppercase">Qty: {count}</span>
+                          </div>
                         </div>
-                        <div className="w-full bg-gray-100 rounded-full h-1.5">
-                          <div
-                            className="bg-blue-500 h-1.5 rounded-full transition-all duration-500"
-                            style={{ width: `${pct}%` }}
-                          />
+                        <div className="w-full bg-gray-50 rounded-full h-1.5 overflow-hidden border border-gray-100">
+                          <div className="bg-blue-600 h-full rounded-full transition-all duration-1000 ease-in-out" style={{ width: `${pct}%` }} />
                         </div>
                       </div>
                     );
@@ -129,35 +150,33 @@ const Analytics = () => {
             )}
           </div>
 
-          {/* Worker Performance */}
-          <div className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 transition-all duration-200 ease-in-out hover:shadow-md hover:-translate-y-1">
-            <h3 className="font-bold text-gray-900 text-sm uppercase tracking-widest mb-5">🏆 Worker Performance</h3>
-
+          <div className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100 hover:shadow-xl transition-all">
+            <h3 className="font-black text-gray-900 text-xs uppercase tracking-[0.2em] mb-8 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-green-500 rounded-full"></span>
+              Worker Efficiency Ranking
+            </h3>
             {Object.keys(data.workerStats).length === 0 ? (
-              <p className="text-gray-400 text-sm italic text-center py-8">No resolution data recorded yet.</p>
+              <div className="py-20 text-center text-gray-400 text-xs italic">No resolutions logged</div>
             ) : (
-              <div className="space-y-2">
+              <div className="space-y-4">
                 {Object.entries(data.workerStats)
                   .sort(([, a], [, b]) => b - a)
                   .map(([name, count], index) => (
-                    <div
-                      key={name}
-                      className="flex justify-between items-center p-3 rounded-lg hover:bg-gray-50 transition-colors duration-150"
-                    >
-                      <div className="flex items-center gap-3">
-                        <span className={`text-[10px] font-black px-2 py-0.5 rounded-md uppercase tracking-widest border ${
-                          index === 0
-                            ? 'bg-yellow-100 text-yellow-700 border-yellow-200'
-                            : 'bg-gray-100 text-gray-500 border-gray-200'
+                    <div key={name} className="flex justify-between items-center p-4 rounded-2xl bg-gray-50/30 hover:bg-white hover:shadow-md transition-all border border-transparent hover:border-gray-100 group">
+                      <div className="flex items-center gap-4">
+                        <div className={`w-8 h-8 rounded-xl flex items-center justify-center text-[10px] font-black tracking-widest ${
+                          index === 0 ? 'bg-amber-100 text-amber-600 border border-amber-200' : 'bg-white text-gray-400 border border-gray-100'
                         }`}>
                           #{index + 1}
-                        </span>
+                        </div>
                         <div>
-                          <p className="text-sm font-semibold text-gray-800">{name}</p>
-                          <p className="text-xs text-gray-400">Resolved tasks</p>
+                          <p className="text-sm font-bold text-gray-800 group-hover:text-blue-600 transition-colors">{name}</p>
+                          <p className="text-[9px] text-gray-400 font-black uppercase tracking-tighter">Verified Resolutions</p>
                         </div>
                       </div>
-                      <span className="text-lg font-bold text-green-600">{count}</span>
+                      <div className="text-right">
+                        <span className="text-xl font-black text-green-600">{count}</span>
+                      </div>
                     </div>
                   ))}
               </div>
@@ -170,4 +189,4 @@ const Analytics = () => {
   );
 };
 
-export default Analytics;
+export default memo(Analytics);

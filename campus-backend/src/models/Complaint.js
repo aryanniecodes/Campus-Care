@@ -23,7 +23,10 @@ const complaintSchema = new mongoose.Schema({
       timestamp: Date
     }],
     default: []
-  }
+  },
+  // ── Clustering Fields ──────────────────────────────────────────────
+  clusterId: { type: String, default: null },
+  keywords: { type: [String], default: [] }
 }, { timestamps: true });
 
 module.exports = mongoose.model("Complaint", complaintSchema);

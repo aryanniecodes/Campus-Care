@@ -1,11 +1,16 @@
-import { useState } from "react";
+import { useState, useEffect, memo } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 
 const CreateComplaint = () => {
+  useEffect(() => {
+    console.log("🚀 CreateComplaint Component Mounted");
+  }, []);
+
   const navigate = useNavigate();
+
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     title: "",
@@ -35,9 +40,41 @@ const CreateComplaint = () => {
     }
   };
 
+  const [suggestions, setSuggestions] = useState({ detected: false, prompts: [], category: null, improvedDescription: null });
+  const [showSuggestions, setShowSuggestions] = useState(false);
+
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      if (formData.title.trim().length >= 5) {
+        try {
+          const res = await api.post("/ai/suggest", { text: formData.title });
+          if (res.data.success) {
+            setSuggestions(res.data.data);
+            setShowSuggestions(true);
+          }
+        } catch (error) {
+          // Silent fail for UX
+        }
+      } else {
+        setShowSuggestions(false);
+      }
+    }, 500);
+
+    return () => clearTimeout(timer);
+  }, [formData.title]);
+
+  const applySuggestion = (type) => {
+    if (type === 'category' && suggestions.category) {
+      setFormData(prev => ({ ...prev, category: suggestions.category }));
+    } else if (type === 'description' && suggestions.improvedDescription) {
+      setFormData(prev => ({ ...prev, description: suggestions.improvedDescription }));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
+
 
     try {
       const data = new FormData();
@@ -88,9 +125,29 @@ const CreateComplaint = () => {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             />
+            {showSuggestions && suggestions.detected && (
+              <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300">
+                <div className="flex justify-between items-center">
+                  <p className="text-xs font-semibold text-blue-700">💡 AI Suggestion: {suggestions.category?.toUpperCase()}</p>
+                  <button 
+                    type="button"
+                    onClick={() => applySuggestion('category')}
+                    className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 transition-colors"
+                  >
+                    Apply Category
+                  </button>
+                </div>
+                <div className="mt-2 space-y-1">
+                  {suggestions.prompts.map((p, i) => (
+                    <p key={i} className="text-[10px] text-blue-500">• {p}</p>
+                  ))}
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+
             <div>
               <label className="block text-sm font-semibold text-gray-700 mb-2">Category</label>
               <select
@@ -135,7 +192,19 @@ const CreateComplaint = () => {
               value={formData.description}
               onChange={(e) => setFormData({ ...formData, description: e.target.value })}
             />
+            {showSuggestions && suggestions.improvedDescription && (
+              <div className="mt-2 flex justify-end">
+                <button 
+                  type="button"
+                  onClick={() => applySuggestion('description')}
+                  className="text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+                >
+                  ✨ Improve description with AI
+                </button>
+              </div>
+            )}
           </div>
+
 
           <div>
             <label className="block text-sm font-semibold text-gray-700 mb-2">Image Upload (Optional)</label>

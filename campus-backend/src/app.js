@@ -11,8 +11,10 @@ const adminRoutes = require("./routes/adminRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
+const aiRoutes = require("./routes/aiRoutes");
 
 connectDB();
+
 
 const app = express();
 
@@ -34,8 +36,10 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/ai", aiRoutes);
 
 // ─── Health Check ──────────────────────────────────────────────────────────────
+
 app.get("/", (req, res) => {
   res.json({ success: true, message: "CampusCare API is running" });
 });

@@ -4,6 +4,8 @@ import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import toast from "react-hot-toast";
 import SLATimer from "../../components/SLATimer";
+import SimilarComplaints from "../../components/SimilarComplaints";
+
 
 const StudentComplaints = () => {
   const navigate = useNavigate();
@@ -147,7 +149,11 @@ const StudentComplaints = () => {
                 </div>
               </div>
 
+              {/* Similar Complaints Clustering */}
+              <SimilarComplaints complaintId={complaint._id} />
+
               {/* Timeline */}
+
               {(complaint.history || []).length > 0 && (
                 <div className="mt-4 pt-4 border-t border-gray-50">
                   <div className="flex flex-col gap-2">

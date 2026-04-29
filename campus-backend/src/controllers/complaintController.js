@@ -4,11 +4,16 @@ const Worker = require("../models/Worker");
 const sendEmail = require("../utils/sendEmail");
 const Activity = require("../models/Activity");
 const Notification = require("../models/notification.model.js");
+const { clusterComplaint } = require("../services/clusteringService");
 
 // 🔥 CREATE COMPLAINT
 exports.createComplaint = async (req, res) => {
   try {
     const { title, description, category, priority } = req.body;
+
+    // ── Apply Smart Clustering ──────────────────────────────────────
+    const { clusterId, keywords } = await clusterComplaint(title, description);
+
 
     const roleMap = {
       plumbing: "plumber",
@@ -39,7 +44,9 @@ exports.createComplaint = async (req, res) => {
       assignedWorker: worker ? worker._id : null,
       image: imagePath,
       status: worker ? "in-progress" : "pending",
-      history: [{ status: "created", timestamp: new Date() }]
+      history: [{ status: "created", timestamp: new Date() }],
+      clusterId,
+      keywords
     });
 
     if (worker) {
@@ -88,7 +95,8 @@ exports.getAllComplaints = async (req, res) => {
 
     res.json({ success: true, data: complaints });
   } catch (error) {
-    res.json({ success: true, data: [] });
+    console.error("Error fetching all complaints:", error);
+    res.status(500).json({ success: false, message: "Error fetching complaints: " + error.message });
   }
 };
 
@@ -181,7 +189,8 @@ exports.getMyComplaints = async (req, res) => {
 
     res.json({ success: true, data: complaints });
   } catch (error) {
-    res.json({ success: true, data: [] });
+    console.error("Error fetching student complaints:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -222,7 +231,8 @@ exports.getWorkerComplaints = async (req, res) => {
     });
 
   } catch (error) {
-    res.json({ success: true, data: [] });
+    console.error("Error fetching worker complaints:", error);
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
@@ -346,7 +356,8 @@ exports.getAnalytics = async (req, res) => {
         total,
         completed,
         pending,
-        avgRating: Number(avgRating.toFixed(1))
+        avgRating: Number(avgRating.toFixed(1)),
+        leaderboard: [] // Placeholder, actual data comes from workers/stats
       }
     });
   } catch (error) {

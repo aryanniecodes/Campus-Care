@@ -17,8 +17,10 @@ const {
   getHighPriorityComplaints,
   getEscalatedComplaints
 } = require("../controllers/complaintController");
+const { getSimilarComplaints } = require("../controllers/aiController");
 const upload = require("../middlewares/upload");
 const { protect } = require("../middlewares/authMiddleware");
+
 
 // GET /api/complaints/high-priority (Admin - Public for Demo)
 router.get("/high-priority", getHighPriorityComplaints);
@@ -38,6 +40,9 @@ router.get("/all", protect, getAllComplaints);
 // GET /api/complaints/assigned (Worker)
 router.get("/assigned", protect, getAssignedComplaints);
 router.get("/worker", protect, getWorkerComplaints);
+
+// GET similar complaints
+router.get("/:id/similar", protect, getSimilarComplaints);
 
 // DELETE /api/complaints/:id (Admin)
 router.delete("/:id", protect, deleteComplaint);

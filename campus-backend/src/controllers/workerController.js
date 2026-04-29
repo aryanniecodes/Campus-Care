@@ -210,7 +210,7 @@ exports.getWorkerStats = async (req, res) => {
     const data = await Promise.all(
       workers.map(async (w) => {
         const completed = await Complaint.countDocuments({
-          assignedTo: w._id,
+          assignedWorker: w._id,
           status: "completed"
         });
 
@@ -230,6 +230,7 @@ exports.getWorkerStats = async (req, res) => {
     });
 
   } catch (error) {
+    console.error("Error fetching worker stats:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

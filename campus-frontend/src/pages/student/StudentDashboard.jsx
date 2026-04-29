@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
 import SLATimer from "../../components/SLATimer";
@@ -11,6 +12,8 @@ const StatCard = ({ label, value, color = "text-gray-900" }) => (
 );
 
 const StudentDashboard = () => {
+  const navigate = useNavigate();
+
   const [complaints, setComplaints] = useState([]);
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState({
@@ -46,10 +49,22 @@ const StudentDashboard = () => {
       <div className="space-y-6">
 
         {/* ── Page Header ── */}
-        <div>
-          <h2 className="text-xl font-semibold text-gray-900">Welcome back 👋</h2>
-          <p className="text-sm text-gray-500 mt-0.5">Here's an overview of your complaints.</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <h2 className="text-xl font-semibold text-gray-900">Welcome back 👋</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Here's an overview of your complaints.</p>
+          </div>
+          <button 
+            onClick={() => {
+              console.log("🖱️ Navigating to create complaint...");
+              navigate("/student/create");
+            }}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition-all active:scale-95 cursor-pointer"
+          >
+            + New Complaint
+          </button>
         </div>
+
 
         {/* ── Stat Cards ── */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
