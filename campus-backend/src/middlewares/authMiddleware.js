@@ -1,41 +1,55 @@
 const jwt = require("jsonwebtoken");
 
-const protect = (req, res, next) => {
-  let token;
-  if (req.headers.authorization && req.headers.authorization.startsWith("Bearer")) {
-    token = req.headers.authorization.split(" ")[1];
-  }
+const JWT_SECRET = process.env.JWT_SECRET || "mysecret123";
+const IS_DEV = process.env.NODE_ENV !== "production";
 
-  if (!token) {
-    console.log("❌ No token provided");
-    return res.status(401).json({ 
-      success: false, 
-      message: "Authorization required. Please provide Bearer token in headers" 
+// ─── Protect Middleware ────────────────────────────────────────────────────────
+// Validates JWT, caches decoded user on req.user.
+// Applied PER-ROUTE only — never globally.
+const protect = (req, res, next) => {
+  const authHeader = req.headers.authorization;
+
+  if (!authHeader || !authHeader.startsWith("Bearer ")) {
+    return res.status(401).json({
+      success: false,
+      message: "Authorization required. Provide: Authorization: Bearer <token>"
     });
   }
 
+  const token = authHeader.split(" ")[1];
+
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET || "mysecret123");
-    console.log("✅ Authenticated user:", decoded.role);
+    const decoded = jwt.verify(token, JWT_SECRET);
+
+    // Cache decoded user on request object — no DB call needed
     req.user = decoded;
+
+    if (IS_DEV) {
+      console.log(`[AUTH] ${req.method} ${req.originalUrl} | role: ${decoded.role} | id: ${decoded.id}`);
+    }
+
     next();
   } catch (error) {
-    return res.status(401).json({ 
-      success: false, 
-      message: "Invalid or expired token. Please login again." 
+    const isExpired = error.name === "TokenExpiredError";
+    return res.status(401).json({
+      success: false,
+      message: isExpired
+        ? "Session expired. Please login again."
+        : "Invalid token. Please login again."
     });
   }
 };
 
+// ─── Admin Only Middleware ─────────────────────────────────────────────────────
+// Must be used AFTER protect middleware.
 const adminOnly = (req, res, next) => {
-  if (req.user && req.user.role === "admin") {
-    next();
-  } else {
-    return res.status(403).json({
-      success: false,
-      message: "Admin access only"
-    });
+  if (req.user?.role === "admin") {
+    return next();
   }
+  return res.status(403).json({
+    success: false,
+    message: "Access denied. Admins only."
+  });
 };
 
 module.exports = { protect, adminOnly };

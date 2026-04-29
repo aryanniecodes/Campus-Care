@@ -9,9 +9,6 @@ router.post("/register-student", registerStudent);
 router.post("/register-worker", registerWorker);
 
 // POST /api/auth/login
-router.post("/login", (req, res, next) => {
-  console.log("🚀 LOGIN ROUTE HIT");
-  next();
-}, login);
+router.post("/login", login);
 
 module.exports = router;

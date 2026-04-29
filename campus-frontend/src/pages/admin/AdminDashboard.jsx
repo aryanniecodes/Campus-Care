@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
@@ -28,66 +28,70 @@ const AdminDashboard = () => {
   const [activities, setActivities] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  // Guard against React StrictMode double-invoke and duplicate calls
+  const hasFetched = useRef(false);
+
+  const fetchData = async (signal) => {
     try {
       // Fetch Activities
-      const actRes = await api.get("/activity");
+      const actRes = await api.get("/activity", { signal });
       const activitiesData = actRes?.data?.data || [];
       
-      setActivities(prev => {
-        const newData = activitiesData.length === 0 ? [
-          { type: "create", message: "New complaint submitted", createdAt: new Date() },
-          { type: "assign", message: "Worker assigned to complaint", createdAt: new Date() }
-        ] : (Array.isArray(activitiesData) ? activitiesData : []);
-        
-        if (JSON.stringify(prev) !== JSON.stringify(newData)) return newData;
-        return prev;
-      });
+      setActivities(
+        activitiesData.length === 0
+          ? [
+              { type: "create", message: "New complaint submitted", createdAt: new Date() },
+              { type: "assign", message: "Worker assigned to complaint", createdAt: new Date() }
+            ]
+          : Array.isArray(activitiesData) ? activitiesData : []
+      );
 
-      // Fetch Stats
+      // Batch fetch all stats in parallel
       const [complaintsRes, analyticsRes, workerStatsRes] = await Promise.all([
-        api.get("/complaints/all"),
-        api.get("/complaints/analytics"),
-        api.get("/workers/stats")
+        api.get("/complaints/all", { signal }),
+        api.get("/complaints/analytics", { signal }),
+        api.get("/workers/stats", { signal })
       ]);
       
-      const compData = complaintsRes?.data?.data || [];
-      setComplaints(prev => {
-        if (JSON.stringify(prev) !== JSON.stringify(compData)) return compData;
-        return prev;
-      });
+      setComplaints(complaintsRes?.data?.data || []);
       
       const data = analyticsRes?.data?.data || {};
-      setAnalytics(prev => {
-        const newData = {
-          total: data.total || 0,
-          completed: data.completed || 0,
-          pending: data.pending || 0,
-          avgRating: data.avgRating || 0,
-          leaderboard: data.leaderboard || []
-        };
-        if (JSON.stringify(prev) !== JSON.stringify(newData)) return newData;
-        return prev;
+      setAnalytics({
+        total: data.total || 0,
+        completed: data.completed || 0,
+        pending: data.pending || 0,
+        avgRating: data.avgRating || 0,
+        leaderboard: data.leaderboard || []
       });
       
-      const workerData = workerStatsRes?.data?.data || [];
-      setWorkerStats(prev => {
-        if (JSON.stringify(prev) !== JSON.stringify(workerData)) return workerData;
-        return prev;
-      });
+      setWorkerStats(workerStatsRes?.data?.data || []);
+    } catch (err) {
+      // Ignore AbortError — request was cancelled on unmount
+      if (err?.name !== "CanceledError" && err?.code !== "ERR_CANCELED") {
+        // Silent fail on background refresh — don't toast on polling
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchData();
+    // Prevent double-fire from React StrictMode in development
+    if (hasFetched.current) return;
+    hasFetched.current = true;
 
+    const controller = new AbortController();
+    fetchData(controller.signal);
+
+    // 30s polling — frequent enough to feel live, won't spam the backend
     const interval = setInterval(() => {
-      fetchData();
-    }, 5000);
+      fetchData(controller.signal);
+    }, 30000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+      controller.abort(); // Cancel in-flight requests on unmount
+    };
   }, []);
 
   if (loading) {

@@ -89,8 +89,6 @@ exports.registerWorker = async (req, res) => {
 // ─── Login ────────────────────────────────────────────────────────────────────
 exports.login = async (req, res) => {
   try {
-    console.log("🔥 LOGIN HIT");
-    console.log("BODY:", req.body);
     const { role, id, password } = req.body || {};
 
     if (!role || !id || !password) {
