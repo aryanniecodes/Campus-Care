@@ -54,9 +54,9 @@ const Login = () => {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center p-4">
       <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-10 animate-in fade-in zoom-in duration-500">
-        <div className="text-center mb-10">
-          <h2 className="text-4xl font-black text-blue-600 tracking-tight">CampusCare</h2>
-          <p className="text-gray-400 mt-2 font-medium">Elevating University Maintenance</p>
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold text-blue-600">CampusCare</h2>
+          <p className="text-gray-400 mt-1 text-sm">University Maintenance Portal</p>
         </div>
 
         <form onSubmit={handleLogin} className="space-y-6">
@@ -103,7 +103,7 @@ const Login = () => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full flex justify-center py-4 px-4 rounded-xl shadow-lg shadow-blue-900/20 text-sm font-black uppercase tracking-widest text-white transition-all cursor-pointer hover:scale-[1.02] active:scale-95 ${
+              className={`w-full flex justify-center py-3 px-4 rounded-xl text-sm font-semibold text-white transition-all duration-200 cursor-pointer ${
                 isLoading ? 'bg-blue-400 cursor-not-allowed' : 'bg-blue-600 hover:bg-blue-700'
               }`}
             >

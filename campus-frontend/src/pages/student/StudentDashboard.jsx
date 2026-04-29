@@ -1,11 +1,12 @@
 import { useEffect, useState } from "react";
 import DashboardLayout from "../../layouts/DashboardLayout";
 import api from "../../services/api";
+import SLATimer from "../../components/SLATimer";
 
 const StatCard = ({ label, value, color = "text-gray-900" }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-shadow duration-200">
-    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
-    <p className={`text-4xl font-bold mt-2 ${color}`}>{value}</p>
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:-translate-y-1 transition-all duration-200 ease-in-out">
+    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
+    <p className={`text-2xl font-semibold mt-1 ${color}`}>{value}</p>
   </div>
 );
 
@@ -42,45 +43,53 @@ const StudentDashboard = () => {
 
   return (
     <DashboardLayout>
-      {!complaints ? <div>Loading...</div> : (
-      <div>
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Welcome back 👋</h2>
-          <p className="text-gray-500 mt-1">Here's an overview of your complaints.</p>
+      <div className="space-y-6">
+
+        {/* ── Page Header ── */}
+        <div>
+          <h2 className="text-xl font-semibold text-gray-900">Welcome back 👋</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Here's an overview of your complaints.</p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* ── Stat Cards ── */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <StatCard label="Total Complaints" value={stats.total} />
-          <StatCard label="In Progress" value={stats.pending} color="text-blue-600" />
+          <StatCard label="In Progress" value={stats.pending} color="text-yellow-600" />
           <StatCard label="Completed" value={stats.completed} color="text-green-600" />
         </div>
 
-        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8">
-          <h3 className="text-base font-semibold text-gray-700 mb-4">Recent Complaints</h3>
+        {/* ── Recent Complaints ── */}
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200">
+          <h3 className="text-sm font-semibold text-gray-700 mb-4">Recent Complaints</h3>
           {loading ? (
-            <p className="text-sm text-gray-400">Loading...</p>
+            <p className="text-sm text-gray-400 animate-pulse">Loading...</p>
           ) : complaints.length === 0 ? (
             <p className="text-sm text-gray-400">You have no recent complaints.</p>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-3">
               {complaints.slice(0, 5).map(c => (
-                <div key={c._id} className="border-b border-gray-50 pb-3">
-                  <p className="font-medium text-gray-900">{c.title}</p>
-                  <p className="text-sm text-gray-600 mt-1 truncate">{c.description}</p>
-                  <p className="text-xs text-gray-500 mt-2 font-semibold uppercase tracking-wide">
-                    <span className={c.status === "completed" ? "text-green-600" : "text-yellow-600"}>
-                      {c.status}
+                <div key={c._id} className="flex items-start justify-between p-3 rounded-lg hover:bg-gray-50 transition-colors duration-150 border-b border-gray-50 last:border-0">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-gray-900 truncate">{c.title}</p>
+                    <p className="text-xs text-gray-500 mt-0.5 truncate">{c.description}</p>
+                  </div>
+                  <div className="flex items-center gap-2 ml-4 flex-shrink-0">
+                    <SLATimer createdAt={c?.createdAt} status={c?.status} />
+                    <span className={`px-2 py-0.5 rounded-md text-[10px] font-semibold uppercase tracking-wide border ${
+                      c.status === "completed"
+                        ? "bg-green-100 text-green-700 border-green-200"
+                        : "bg-yellow-100 text-yellow-700 border-yellow-200"
+                    }`}>
+                      {c.status === "completed" ? "Done" : "Active"}
                     </span>
-                    <span className="mx-2 text-gray-300">|</span>
-                    Priority: {c.priority}
-                  </p>
+                  </div>
                 </div>
               ))}
             </div>
           )}
         </div>
+
       </div>
-      )}
     </DashboardLayout>
   );
 };

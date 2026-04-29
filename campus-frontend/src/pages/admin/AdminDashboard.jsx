@@ -9,13 +9,13 @@ import EscalationBanner from "../../components/EscalationBanner";
 import SLATimer from "../../components/SLATimer";
 
 const StatCard = ({ label, value, color = "text-gray-900", icon }) => (
-  <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6 hover:shadow-lg hover:scale-105 transition-all duration-300">
+  <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md hover:-translate-y-1 transition-all duration-200 ease-in-out">
     <div className="flex justify-between items-start">
       <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wider">{label}</p>
-        <p className={`text-4xl font-bold mt-2 ${color}`}>{value}</p>
+        <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">{label}</p>
+        <p className={`text-2xl font-semibold mt-1 ${color}`}>{value}</p>
       </div>
-      {icon && <span className="text-2xl opacity-50">{icon}</span>}
+      {icon && <span className="text-xl opacity-40">{icon}</span>}
     </div>
   </div>
 );
@@ -138,21 +138,20 @@ const AdminDashboard = () => {
 
   return (
     <DashboardLayout>
-      <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
-        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+      <div className="space-y-6">
+        {/* ── Page Header ── */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h2 className="text-4xl font-black text-gray-900 font-outfit tracking-tight">Admin Analytics 📈</h2>
-            <p className="text-gray-500 mt-1 font-medium">Real-time performance and system monitoring.</p>
+            <h2 className="text-xl font-semibold text-gray-900">Admin Dashboard</h2>
+            <p className="text-sm text-gray-500 mt-0.5">Real-time performance and system monitoring.</p>
           </div>
           {topWorker && (
-            <div className="bg-white border border-amber-100 px-6 py-4 rounded-2xl flex items-center gap-4 shadow-xl shadow-amber-900/5 hover:scale-105 transition-all duration-500 cursor-default">
-              <div className="bg-gradient-to-br from-amber-400 to-orange-500 text-white w-12 h-12 rounded-2xl flex items-center justify-center text-2xl shadow-lg shadow-amber-200 rotate-3">
-                🏆
-              </div>
+            <div className="bg-white border border-gray-100 px-4 py-3 rounded-xl flex items-center gap-3 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all duration-200 cursor-default">
+              <span className="text-lg">🏆</span>
               <div>
-                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-amber-600">Leaderboard #1</p>
-                <p className="font-extrabold text-gray-900 text-lg">{topWorker.name}</p>
-                <p className="text-xs text-gray-400 font-bold">{topWorker.completed} resolutions</p>
+                <p className="text-[10px] font-semibold uppercase tracking-wider text-gray-400">Top Worker</p>
+                <p className="font-semibold text-gray-800 text-sm">{topWorker.name}</p>
+                <p className="text-xs text-gray-400">{topWorker.completed} resolutions</p>
               </div>
             </div>
           )}
@@ -161,38 +160,34 @@ const AdminDashboard = () => {
         <PriorityBanner />
         <EscalationBanner />
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <StatCard label="Total Requests" value={analytics.total} icon="📋" />
-          <StatCard label="Pending" value={analytics.pending} color="text-yellow-500" icon="⏳" />
+          <StatCard label="Pending" value={analytics.pending} color="text-yellow-600" icon="⏳" />
           <StatCard label="Completed" value={analytics.completed} color="text-green-600" icon="✅" />
-          <StatCard label="Student Rating" value={`${analytics.avgRating} / 5`} color="text-blue-600" icon="⭐" />
+          <StatCard label="Avg Rating" value={`${analytics.avgRating} / 5`} color="text-blue-600" icon="⭐" />
         </div>
 
-        <div className="bg-white p-4 rounded-xl shadow mt-6 mb-8">
-          <h2 className="text-lg font-bold mb-4">Recent Activity</h2>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200">
+          <h3 className="text-sm font-semibold text-gray-700 mb-4">Recent Activity</h3>
 
           {activities.length === 0 ? (
-            <p className="text-gray-400">No recent activity</p>
+            <p className="text-sm text-gray-400">No recent activity.</p>
           ) : (
-            <div className="space-y-3 max-h-[200px] overflow-y-auto">
+            <div className="space-y-2 max-h-48 overflow-y-auto">
               {activities.map((item, index) => (
                 <div
                   key={index}
-                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg border border-gray-200"
+                  className="flex items-start gap-3 p-3 bg-gray-50 rounded-lg"
                 >
-                  <div className="text-xl">
+                  <div className="text-base">
                     {item.type === "create" && "📝"}
                     {item.type === "complete" && "✅"}
                     {item.type === "assign" && "🔧"}
                   </div>
 
                   <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">
-                      {item.message}
-                    </p>
-                    <p className="text-xs text-gray-400">
-                      {new Date(item.createdAt).toLocaleString()}
-                    </p>
+                    <p className="text-sm font-medium text-gray-800">{item.message}</p>
+                    <p className="text-xs text-gray-400">{new Date(item.createdAt).toLocaleString()}</p>
                   </div>
                 </div>
               ))}
@@ -200,10 +195,10 @@ const AdminDashboard = () => {
           )}
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-8">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Pie Chart Card */}
-          <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 flex flex-col items-center justify-center hover:shadow-xl transition-all duration-500">
-            <h3 className="text-base font-bold text-gray-800 mb-4 self-start uppercase tracking-wider">📊 Resolution Split</h3>
+          <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 flex flex-col items-center justify-center hover:shadow-md transition-all duration-200 ease-in-out">
+            <h3 className="text-sm font-semibold text-gray-700 mb-4 self-start">📊 Resolution Split</h3>
             <div className="w-full h-72">
               <ResponsiveContainer width="100%" height="100%">
                 <PieChart>
@@ -231,12 +226,10 @@ const AdminDashboard = () => {
             </div>
           </div>
 
-          {/* Worker Performance Ranking */}
-          <div className="lg:col-span-2 bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl transition-all duration-500">
-            <h3 className="text-base font-bold text-gray-800 mb-8 flex items-center gap-2 uppercase tracking-wider">
-              🏅 Worker Leaderboard
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+          {/* Worker Leaderboard */}
+          <div className="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100 p-6 hover:shadow-md transition-all duration-200 ease-in-out">
+            <h3 className="text-sm font-semibold text-gray-700 mb-5">🏅 Worker Leaderboard</h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(rankedWorkers || []).length === 0 ? (
                 <p className="text-gray-400 text-center py-8 col-span-full font-medium">No worker data available</p>
               ) : (rankedWorkers || []).map((w, index) => (
@@ -271,8 +264,8 @@ const AdminDashboard = () => {
           </div>
         </div>
 
-        <div className="bg-white rounded-3xl shadow-sm border border-gray-100 p-8 hover:shadow-xl transition-all duration-500">
-          <h3 className="text-base font-bold text-gray-800 mb-8 uppercase tracking-wider">Recent Activity Flow</h3>
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-5 hover:shadow-md transition-all duration-200">
+          <h3 className="text-sm font-semibold text-gray-700 mb-4">Activity Flow</h3>
           {complaints.length === 0 ? (
             <div className="text-center py-12 bg-gray-50 rounded-2xl border border-dashed border-gray-200">
               <p className="text-gray-400 font-bold uppercase tracking-widest text-xs">No activity flow recorded yet.</p>
@@ -294,7 +287,7 @@ const AdminDashboard = () => {
                   </div>
                   <button 
                     onClick={() => handleDelete(c._id)}
-                    className="text-red-500 hover:text-white hover:bg-red-500 text-[10px] font-black uppercase tracking-widest transition-all px-4 py-2 bg-red-50 rounded-xl cursor-pointer shadow-sm active:scale-90"
+                    className="text-red-500 text-xs font-semibold px-3 py-1.5 bg-red-50 hover:bg-red-100 rounded-lg cursor-pointer transition-all duration-200 border border-red-100"
                   >
                     Remove
                   </button>

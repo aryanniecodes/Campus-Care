@@ -71,9 +71,9 @@ const CreateComplaint = () => {
         </div>
       )}
       <div className="max-w-2xl">
-        <div className="mb-8">
-          <h2 className="text-3xl font-bold text-gray-900">Submit New Complaint</h2>
-          <p className="text-gray-500 mt-1">Please provide details about the maintenance issue.</p>
+        <div className="mb-6">
+          <h2 className="text-xl font-semibold text-gray-900">Submit New Complaint</h2>
+          <p className="text-sm text-gray-500 mt-0.5">Please provide details about the maintenance issue.</p>
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
@@ -166,7 +166,7 @@ const CreateComplaint = () => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-lg shadow-lg shadow-blue-900/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+            className="w-full py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm transition-all duration-200 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
           >
             {loading ? "Submitting..." : "Submit Complaint"}
           </button>
