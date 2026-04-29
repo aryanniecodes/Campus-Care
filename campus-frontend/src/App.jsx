@@ -8,6 +8,7 @@ import WorkerHistory from './pages/worker/WorkerHistory';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import AdminFeedback from './pages/admin/AdminFeedback';
 import AdminComplaints from './pages/admin/AdminComplaints';
+import Analytics from './pages/admin/Analytics';
 import ProtectedRoute from './components/ProtectedRoute';
 import { Toaster } from 'react-hot-toast';
 
@@ -84,6 +85,14 @@ function App() {
           element={
             <ProtectedRoute>
               <AdminComplaints />
+            </ProtectedRoute>
+          } 
+        />
+        <Route 
+          path="/admin/analytics" 
+          element={
+            <ProtectedRoute>
+              <Analytics />
             </ProtectedRoute>
           } 
         />

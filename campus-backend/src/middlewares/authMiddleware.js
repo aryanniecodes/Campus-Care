@@ -7,16 +7,35 @@ const protect = (req, res, next) => {
   }
 
   if (!token) {
-    return res.status(401).json({ success: false, message: "Not authorized to access this route" });
+    console.log("❌ No token provided");
+    return res.status(401).json({ 
+      success: false, 
+      message: "Authorization required. Please provide Bearer token in headers" 
+    });
   }
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET || "mysecret123");
+    console.log("✅ Authenticated user:", decoded.role);
     req.user = decoded;
     next();
   } catch (error) {
-    return res.status(401).json({ success: false, message: "Not authorized to access this route" });
+    return res.status(401).json({ 
+      success: false, 
+      message: "Invalid or expired token. Please login again." 
+    });
   }
 };
 
-module.exports = { protect };
+const adminOnly = (req, res, next) => {
+  if (req.user && req.user.role === "admin") {
+    next();
+  } else {
+    return res.status(403).json({
+      success: false,
+      message: "Admin access only"
+    });
+  }
+};
+
+module.exports = { protect, adminOnly };

@@ -89,12 +89,14 @@ exports.registerWorker = async (req, res) => {
 // ─── Login ────────────────────────────────────────────────────────────────────
 exports.login = async (req, res) => {
   try {
-    const { role, id, password } = req.body;
+    console.log("🔥 LOGIN HIT");
+    console.log("BODY:", req.body);
+    const { role, id, password } = req.body || {};
 
     if (!role || !id || !password) {
       return res.status(400).json({
         success: false,
-        message: "role, id and password are required"
+        message: "Invalid request body for login. Required: role, id, password"
       });
     }
 

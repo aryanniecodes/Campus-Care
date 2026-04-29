@@ -10,6 +10,7 @@ const feedbackRoutes = require("./routes/feedbackRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const activityRoutes = require("./routes/activityRoutes");
 const notificationRoutes = require("./routes/notificationRoutes");
+const analyticsRoutes = require("./routes/analyticsRoutes");
 
 connectDB();
 
@@ -29,10 +30,20 @@ app.use("/api/feedback", feedbackRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/activity", activityRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/analytics", analyticsRoutes);
 
 // Base route
 app.get("/", (req, res) => {
     res.send("CampusCare API Running...");
+});
+
+app.get("/test", (req, res) => {
+    res.send("Server working");
+});
+
+app.post("/debug-login", (req, res) => {
+    console.log("DEBUG BODY:", req.body);
+    res.json({ received: req.body });
 });
 
 // server
