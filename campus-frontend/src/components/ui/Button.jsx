@@ -5,7 +5,7 @@ export const Button = ({ children, variant = "primary", isLoading, className = "
   
   const variants = {
     primary: "bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white shadow-blue-500/25 hover:shadow-lg",
-    secondary: "bg-white text-gray-700 border border-gray-200 hover:bg-gray-50 hover:border-gray-300",
+    secondary: "bg-gray-100 dark:bg-gray-700 text-gray-700 dark:text-gray-300 border border-gray-200 dark:border-gray-600 hover:bg-gray-200 dark:hover:bg-gray-600",
     danger: "bg-gradient-to-r from-red-500 to-rose-600 text-white shadow-red-500/25 hover:shadow-lg"
   };
 

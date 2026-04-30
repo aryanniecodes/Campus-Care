@@ -1,8 +1,8 @@
 import { motion } from "framer-motion";
 
 export const Card = ({ children, className = "", hover = false, delay = 0, ...props }) => {
-  const baseStyles = "bg-white rounded-2xl shadow-sm border border-gray-100 p-6";
-  const hoverStyles = hover ? "hover:shadow-md hover:border-gray-200 transition-all duration-200 cursor-pointer" : "";
+  const baseStyles = "bg-white dark:bg-gray-800 rounded-2xl shadow-sm border border-gray-200 dark:border-gray-700 p-6 transition-colors duration-300";
+  const hoverStyles = hover ? "hover:shadow-md hover:border-gray-300 dark:hover:border-gray-600 cursor-pointer" : "";
 
   return (
     <motion.div

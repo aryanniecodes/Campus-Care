@@ -4,7 +4,6 @@ const Student = require("../models/Student");
 const { sendEmail } = require("../services/emailService");
 const Activity = require("../models/Activity");
 const Notification = require("../models/notification.model.js");
-const logger = require("../utils/logger");
 
 // 1. Get Logged In Worker (Me)
 exports.getWorkerMe = async (req, res) => {
@@ -14,21 +13,21 @@ exports.getWorkerMe = async (req, res) => {
       return res.status(404).json({ success: false, message: "Worker not found" });
     }
 
-    const completedTasks = await Complaint.countDocuments({ 
-      assignedWorker: req.user.id, 
-      status: "completed" 
+    const completedTasks = await Complaint.countDocuments({
+      assignedWorker: req.user.id,
+      status: "completed"
     });
 
     const workerData = worker.toObject();
     workerData.available = workerData.tasksAssigned < 5;
 
-    res.status(200).json({ 
-      success: true, 
-      data: { 
-        ...workerData, 
+    res.status(200).json({
+      success: true,
+      data: {
+        ...workerData,
         completedTasks,
-        assignedTasks: worker.tasksAssigned 
-      } 
+        assignedTasks: worker.tasksAssigned
+      }
     });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -85,7 +84,7 @@ exports.completeTask = async (req, res) => {
     const worker = await Worker.findById(req.user.id);
     if (worker) {
       worker.tasksAssigned = Math.max(0, (worker.tasksAssigned || 0) - 1);
-      
+
       // 🔄 QUEUE SYSTEM: Find pending complaint for this worker's role
       const roleToCategory = {
         electrician: "electricity",
@@ -103,7 +102,7 @@ exports.completeTask = async (req, res) => {
         pendingComplaint.status = "in-progress";
         pendingComplaint.history.push({ status: "assigned", timestamp: new Date() });
         worker.tasksAssigned += 1;
-        
+
         await pendingComplaint.save();
 
         // Notify Worker (the one who just completed a task and got a new one)
@@ -117,7 +116,7 @@ exports.completeTask = async (req, res) => {
           const message = `Hello ${worker.name},\n\nYou have been automatically assigned a new task from the queue.\n\nTitle: ${pendingComplaint.title}\nCategory: ${pendingComplaint.category}\n\nPlease check your dashboard for details.\n\nBest regards,\nCampusCare Team`;
           await sendEmail(worker.email, "New Task Assigned - CampusCare", message);
         } else {
-          logger.warn(`[EMAIL SKIP] No valid worker email found for worker ID: ${worker._id}`);
+          console.log(`[EMAIL SKIP] No valid worker email found for worker ID: ${worker._id}`);
         }
       }
 
@@ -142,7 +141,7 @@ exports.completeTask = async (req, res) => {
 
       await sendEmail(student.email, "Complaint Resolved - CampusCare", message);
     } else {
-      logger.warn(`[EMAIL SKIP] No valid student email found for student ID: ${complaint.studentId}`);
+      console.log(`[EMAIL SKIP] No valid student email found for student ID: ${complaint.studentId}`);
     }
 
     res.json({ success: true, message: "Task marked as completed" });
@@ -157,18 +156,18 @@ exports.toggleAvailability = async (req, res) => {
   try {
     const { workerId } = req.params;
     const worker = await Worker.findById(workerId).select("-password");
-    
+
     if (!worker) {
       return res.status(404).json({ success: false, message: "Worker not found" });
     }
-    
+
     worker.available = !worker.available;
     await worker.save();
-    
-    res.status(200).json({ 
+
+    res.status(200).json({
       success: true,
-      message: "Availability updated", 
-      data: { worker } 
+      message: "Availability updated",
+      data: { worker }
     });
   } catch (error) {
     res.status(500).json({
@@ -230,7 +229,7 @@ exports.getWorkerStats = async (req, res) => {
     });
 
   } catch (error) {
-    logger.error("Error fetching worker stats:", error);
+    console.error("Error fetching worker stats:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
