@@ -40,34 +40,44 @@ const CreateComplaint = () => {
     }
   };
 
+  const [aiLoading, setAiLoading] = useState(false);
   const [suggestions, setSuggestions] = useState({ detected: false, prompts: [], category: null, improvedDescription: null });
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
     const timer = setTimeout(async () => {
       if (formData.title.trim().length >= 5) {
+        setAiLoading(true);
+        console.log("🔍 Triggering AI Suggestion for:", formData.title);
         try {
           const res = await api.post("/ai/suggest", { text: formData.title });
+          console.log("✨ AI Response Received:", res.data);
           if (res.data.success) {
             setSuggestions(res.data.data);
             setShowSuggestions(true);
           }
         } catch (error) {
+          console.error("❌ AI Suggestion Error:", error);
           // Silent fail for UX
+        } finally {
+          setAiLoading(false);
         }
       } else {
         setShowSuggestions(false);
+        setSuggestions({ detected: false, prompts: [], category: null, improvedDescription: null });
       }
     }, 500);
 
     return () => clearTimeout(timer);
   }, [formData.title]);
 
-  const applySuggestion = (type) => {
-    if (type === 'category' && suggestions.category) {
-      setFormData(prev => ({ ...prev, category: suggestions.category }));
+  const applySuggestion = (type, value = null) => {
+    if (type === 'category' && (value || suggestions.category)) {
+      setFormData(prev => ({ ...prev, category: value || suggestions.category }));
     } else if (type === 'description' && suggestions.improvedDescription) {
       setFormData(prev => ({ ...prev, description: suggestions.improvedDescription }));
+    } else if (type === 'prompt' && value) {
+       setFormData(prev => ({ ...prev, description: (prev.description ? prev.description + "\n" : "") + value }));
     }
   };
 
@@ -114,7 +124,7 @@ const CreateComplaint = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="bg-white rounded-2xl shadow-sm border border-gray-100 p-8 space-y-6">
-          <div>
+          <div className="relative">
             <label className="block text-sm font-semibold text-gray-700 mb-2">Title</label>
             <input
               type="text"
@@ -125,26 +135,55 @@ const CreateComplaint = () => {
               value={formData.title}
               onChange={(e) => setFormData({ ...formData, title: e.target.value })}
             />
-            {showSuggestions && suggestions.detected && (
-              <div className="mt-2 p-3 bg-blue-50 rounded-lg border border-blue-100 animate-in fade-in slide-in-from-top-1 duration-300">
-                <div className="flex justify-between items-center">
-                  <p className="text-xs font-semibold text-blue-700">💡 AI Suggestion: {suggestions.category?.toUpperCase()}</p>
-                  <button 
-                    type="button"
-                    onClick={() => applySuggestion('category')}
-                    className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded hover:bg-blue-700 transition-colors"
-                  >
-                    Apply Category
-                  </button>
+            
+            {aiLoading && (
+              <div className="absolute right-3 top-[42px] flex items-center gap-2 text-blue-500">
+                <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+                <span className="text-[10px] font-medium">AI Thinking...</span>
+              </div>
+            )}
+
+            {showSuggestions && (suggestions.detected || suggestions.prompts.length > 0) && !aiLoading && (
+              <div className="mt-2 p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex justify-between items-center mb-3">
+                  <div className="flex items-center gap-2">
+                    <span className="p-1 bg-blue-600 rounded-md">
+                      <svg className="w-3 h-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={3} d="M13 10V3L4 14h7v7l9-11h-7z" />
+                      </svg>
+                    </span>
+                    <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">AI Assistant</p>
+                  </div>
+                  {suggestions.category && (
+                    <button 
+                      type="button"
+                      onClick={() => applySuggestion('category')}
+                      className="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full font-bold hover:bg-blue-700 transition-all hover:shadow-md"
+                    >
+                      Set Category to {suggestions.category}
+                    </button>
+                  )}
                 </div>
-                <div className="mt-2 space-y-1">
-                  {suggestions.prompts.map((p, i) => (
-                    <p key={i} className="text-[10px] text-blue-500">• {p}</p>
-                  ))}
+                
+                <div className="space-y-2">
+                  <p className="text-[11px] font-medium text-blue-600/70 mb-1">Suggestions to include in description:</p>
+                  <div className="flex flex-wrap gap-2">
+                    {suggestions.prompts.map((p, i) => (
+                      <button
+                        key={i}
+                        type="button"
+                        onClick={() => applySuggestion('prompt', p)}
+                        className="text-[10px] bg-white border border-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-left shadow-sm"
+                      >
+                        + {p}
+                      </button>
+                    ))}
+                  </div>
                 </div>
               </div>
             )}
           </div>
+
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
 

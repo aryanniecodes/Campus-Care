@@ -1,5 +1,6 @@
 const Complaint = require("../models/Complaint");
 const { generateSuggestion } = require("../services/suggestionService");
+const axios = require("axios");
 
 // ── POST /api/ai/suggest ────────────────────────────────────────────────────
 // Input: { text: "partial complaint text" }
@@ -8,6 +9,8 @@ exports.getSuggestion = async (req, res) => {
   try {
     const { text } = req.body;
 
+    console.log(`[AI] Request received for text: "${text}"`);
+
     if (!text || text.trim().length < 5) {
       return res.json({
         success: true,
@@ -15,10 +18,29 @@ exports.getSuggestion = async (req, res) => {
       });
     }
 
-    const suggestion = generateSuggestion(text);
+    let suggestion;
+    try {
+      // Try calling FastAPI service
+      const aiResponse = await axios.post("http://localhost:8000/suggest", { text });
+      console.log("[AI] FastAPI Response:", aiResponse.data);
+      
+      const { suggestions, category } = aiResponse.data;
+      
+      suggestion = {
+        detected: true,
+        category: category,
+        improvedDescription: `There is a ${category} issue: ${text}. Please investigate.`,
+        prompts: suggestions
+      };
+    } catch (aiError) {
+      console.warn("[AI] FastAPI service unavailable, using local fallback.", aiError.message);
+      // Fallback to local rule-based service
+      suggestion = generateSuggestion(text);
+    }
 
     res.json({ success: true, data: suggestion });
   } catch (error) {
+    console.error("[AI] Error in getSuggestion:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
