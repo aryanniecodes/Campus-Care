@@ -41,6 +41,8 @@ const CreateComplaint = () => {
   };
 
   const [aiLoading, setAiLoading] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
+  const [isEnhanced, setIsEnhanced] = useState(false);
   const [suggestions, setSuggestions] = useState({ detected: false, prompts: [], category: null, improvedDescription: null });
   const [showSuggestions, setShowSuggestions] = useState(false);
 
@@ -78,6 +80,33 @@ const CreateComplaint = () => {
       setFormData(prev => ({ ...prev, description: suggestions.improvedDescription }));
     } else if (type === 'prompt' && value) {
        setFormData(prev => ({ ...prev, description: (prev.description ? prev.description + "\n" : "") + value }));
+    }
+  };
+
+  const handleImproveDescription = async () => {
+    if (!formData.description) return toast.error("Please enter a description first");
+    if (isImproving || isEnhanced) return; // Prevent double click or re-enhancing
+    
+    setIsImproving(true);
+    const loadingToast = toast.loading("Enhancing your description...");
+    
+    try {
+      const res = await api.post("/ai/improve-description", {
+        title: formData.title,
+        description: formData.description
+      });
+      
+      if (res.data.success) {
+        setFormData(prev => ({ ...prev, description: res.data.improvedText }));
+        setIsEnhanced(true);
+        toast.success("Description enhanced!", { id: loadingToast });
+      } else {
+        toast.error("Failed to enhance description", { id: loadingToast });
+      }
+    } catch (error) {
+      toast.error("Failed to enhance description", { id: loadingToast });
+    } finally {
+      setIsImproving(false);
     }
   };
 
@@ -229,16 +258,28 @@ const CreateComplaint = () => {
               placeholder="Describe the problem in detail..."
               className="w-full px-4 py-3 rounded-xl border border-gray-200 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
               value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+              onChange={(e) => {
+                setFormData({ ...formData, description: e.target.value });
+                if (isEnhanced) setIsEnhanced(false);
+              }}
             />
-            {showSuggestions && suggestions.improvedDescription && (
+            {formData.description.length > 5 && (
               <div className="mt-2 flex justify-end">
                 <button 
                   type="button"
-                  onClick={() => applySuggestion('description')}
-                  className="text-[10px] font-bold text-blue-600 hover:text-blue-700 transition-colors flex items-center gap-1"
+                  disabled={isImproving || isEnhanced}
+                  onClick={handleImproveDescription}
+                  className={`text-[10px] font-bold flex items-center gap-1 transition-colors ${
+                    isEnhanced 
+                      ? "text-green-600 cursor-default" 
+                      : "text-blue-600 hover:text-blue-700 disabled:opacity-50"
+                  }`}
                 >
-                  ✨ Improve description with AI
+                  {isImproving 
+                    ? "✨ Processing..." 
+                    : isEnhanced 
+                      ? "✨ Enhanced by AI" 
+                      : "✨ Improve description with AI"}
                 </button>
               </div>
             )}

@@ -1,9 +1,10 @@
 const Complaint = require("../models/Complaint");
 const Worker = require("../models/Worker");
 const Student = require("../models/Student");
-const sendEmail = require("../utils/sendEmail");
+const { sendEmail } = require("../services/emailService");
 const Activity = require("../models/Activity");
 const Notification = require("../models/notification.model.js");
+const logger = require("../utils/logger");
 
 // 1. Get Logged In Worker (Me)
 exports.getWorkerMe = async (req, res) => {
@@ -111,6 +112,13 @@ exports.completeTask = async (req, res) => {
           role: "worker",
           message: "New task assigned to you"
         });
+
+        if (worker.email) {
+          const message = `Hello ${worker.name},\n\nYou have been automatically assigned a new task from the queue.\n\nTitle: ${pendingComplaint.title}\nCategory: ${pendingComplaint.category}\n\nPlease check your dashboard for details.\n\nBest regards,\nCampusCare Team`;
+          await sendEmail(worker.email, "New Task Assigned - CampusCare", message);
+        } else {
+          logger.warn(`[EMAIL SKIP] No valid worker email found for worker ID: ${worker._id}`);
+        }
       }
 
       if (worker.tasksAssigned < 5) {
@@ -129,20 +137,12 @@ exports.completeTask = async (req, res) => {
     // Send email to student
     const student = await Student.findById(complaint.studentId);
 
-    if (student) {
-      const message = `
-Your complaint has been completed
+    if (student && student.email) {
+      const message = `Hello ${student.name || 'Student'},\n\nYour complaint has been resolved.\n\nTitle: ${complaint.title}\nStatus: Completed\n\nThank you for your patience.\n\nBest regards,\nCampusCare Team`;
 
-Title: ${complaint.title}
-Status: Completed
-
-Thank you for your patience.
-      `;
-
-      const testEmail = "aryanicodes@gmail.com";
-      if (process.env.ENABLE_EMAIL === "true") {
-        await sendEmail(testEmail, "Complaint Completed", message);
-      }
+      await sendEmail(student.email, "Complaint Resolved - CampusCare", message);
+    } else {
+      logger.warn(`[EMAIL SKIP] No valid student email found for student ID: ${complaint.studentId}`);
     }
 
     res.json({ success: true, message: "Task marked as completed" });
@@ -230,7 +230,7 @@ exports.getWorkerStats = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error fetching worker stats:", error);
+    logger.error("Error fetching worker stats:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };

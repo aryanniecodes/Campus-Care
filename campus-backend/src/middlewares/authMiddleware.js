@@ -1,7 +1,7 @@
 const jwt = require("jsonwebtoken");
 
 const JWT_SECRET = process.env.JWT_SECRET || "mysecret123";
-const IS_DEV = process.env.NODE_ENV !== "production";
+const logger = require("../utils/logger");
 
 // ─── Protect Middleware ────────────────────────────────────────────────────────
 // Validates JWT, caches decoded user on req.user.
@@ -24,9 +24,7 @@ const protect = (req, res, next) => {
     // Cache decoded user on request object — no DB call needed
     req.user = decoded;
 
-    if (IS_DEV) {
-      console.log(`[AUTH] ${req.method} ${req.originalUrl} | role: ${decoded.role} | id: ${decoded.id}`);
-    }
+    logger.debug(`[AUTH] ${req.method} ${req.originalUrl} | role: ${decoded.role} | id: ${decoded.id}`);
 
     next();
   } catch (error) {

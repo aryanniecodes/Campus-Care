@@ -1,15 +1,21 @@
 const axios = require("axios");
 const Complaint = require("../models/Complaint");
 const Worker = require("../models/Worker");
-const sendEmail = require("../utils/sendEmail");
+const Student = require("../models/Student");
+const { sendEmail } = require("../services/emailService");
 const Activity = require("../models/Activity");
 const Notification = require("../models/notification.model.js");
+const logger = require("../utils/logger");
 const { clusterComplaint } = require("../services/clusteringService");
 
 // 🔥 CREATE COMPLAINT
 exports.createComplaint = async (req, res) => {
   try {
     const { title, description, category, priority } = req.body;
+
+    if (!title || !description || !category || !priority) {
+      return res.status(400).json({ success: false, message: "All fields are required" });
+    }
 
     // ── Apply Smart Clustering ──────────────────────────────────────
     const { clusterId, keywords } = await clusterComplaint(title, description);
@@ -76,6 +82,13 @@ exports.createComplaint = async (req, res) => {
         role: "worker",
         message: "New task assigned to you"
       });
+
+      if (worker.email) {
+        const message = `Hello ${worker.name},\n\nYou have been automatically assigned a new task.\n\nTitle: ${complaint.title}\nCategory: ${complaint.category}\nPriority: ${complaint.priority}\n\nPlease check your dashboard for details.\n\nBest regards,\nCampusCare Team`;
+        await sendEmail(worker.email, "New Task Assigned - CampusCare", message);
+      } else {
+        logger.warn(`[EMAIL SKIP] No valid worker email found for worker ID: ${worker._id}`);
+      }
     }
 
     res.json({ success: true, data: complaint });
@@ -95,7 +108,7 @@ exports.getAllComplaints = async (req, res) => {
 
     res.json({ success: true, data: complaints });
   } catch (error) {
-    console.error("Error fetching all complaints:", error);
+    logger.error("Error fetching all complaints:", error);
     res.status(500).json({ success: false, message: "Error fetching complaints: " + error.message });
   }
 };
@@ -189,7 +202,7 @@ exports.getMyComplaints = async (req, res) => {
 
     res.json({ success: true, data: complaints });
   } catch (error) {
-    console.error("Error fetching student complaints:", error);
+    logger.error("Error fetching student complaints:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -231,7 +244,7 @@ exports.getWorkerComplaints = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Error fetching worker complaints:", error);
+    logger.error("Error fetching worker complaints:", error);
     res.status(500).json({ success: false, message: error.message });
   }
 };
@@ -301,6 +314,13 @@ exports.assignWorker = async (req, res) => {
       message: "New task assigned to you"
     });
 
+    if (worker.email) {
+      const message = `Hello ${worker.name},\n\nYou have been manually assigned a new task by an admin.\n\nTitle: ${complaint.title}\nCategory: ${complaint.category}\n\nPlease check your dashboard for details.\n\nBest regards,\nCampusCare Team`;
+      await sendEmail(worker.email, "New Task Assigned - CampusCare", message);
+    } else {
+      logger.warn(`[EMAIL SKIP] No valid worker email found for worker ID: ${worker._id}`);
+    }
+
     res.json({ success: true, message: "Worker assigned successfully", data: complaint });
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
@@ -327,6 +347,14 @@ exports.updateStatus = async (req, res) => {
         role: "student",
         message: "Your complaint has been resolved"
       });
+
+      const student = await Student.findById(complaint.studentId);
+      if (student && student.email) {
+        const message = `Hello ${student.name || 'Student'},\n\nYour complaint has been resolved.\n\nTitle: ${complaint.title}\nStatus: Completed\n\nThank you for your patience.\n\nBest regards,\nCampusCare Team`;
+        await sendEmail(student.email, "Complaint Resolved - CampusCare", message);
+      } else {
+        logger.warn(`[EMAIL SKIP] No valid student email found for student ID: ${complaint.studentId}`);
+      }
     }
 
     res.json({ success: true, message: "Status updated successfully", data: complaint });

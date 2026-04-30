@@ -54,8 +54,10 @@ api.interceptors.response.use(
         console.error(`[SERVER ERROR] ${message}`);
       }
     } else {
-      // Network error
-      toast.error("Network error. Check your connection.");
+      // Network error or server down (ERR_CONNECTION_REFUSED)
+      toast.error("Our servers are currently unreachable. Please try again later.", {
+        id: 'network-error' // Prevents toast spam if multiple requests fail at once
+      });
     }
 
     return Promise.reject(error);
