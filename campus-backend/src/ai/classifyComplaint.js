@@ -1,4 +1,5 @@
 const openai = require("./aiClient");
+const logger = require("../utils/logger");
 
 /**
  * Classifies a complaint into a category using AI.
@@ -27,7 +28,7 @@ const classifyComplaint = async (title, description) => {
     
     return validCategories.includes(category) ? category : "other";
   } catch (error) {
-    console.error("AI Classification error:", error.message);
+    logger.error("AI Classification error:", error.message);
     return fallbackLogic(title, description);
   }
 };

@@ -1,10 +1,17 @@
 const nodemailer = require("nodemailer");
 
+const logger = require("./logger");
+
 const sendEmail = async (to, subject, text) => {
+  // ─── DEMO MODE ────────────────────────────────────────────────────────────────
+  // In a real production app, you would use Nodemailer or SendGrid here.
+  // For this hackathon/demo, we log to the console to show it works.
+  if (process.env.NODE_ENV === "development") {
+    logger.info(`[DEMO MODE] Email to ${to} would have been sent: ${subject}`);
+    return true;
+  }
+
   try {
-    // Email disabled for demo
-    console.log(`[DEMO MODE] Email to ${to} would have been sent: ${subject}`);
-    /*
     const transporter = nodemailer.createTransport({
       service: "gmail",
       auth: {
@@ -21,10 +28,11 @@ const sendEmail = async (to, subject, text) => {
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`Email sent to ${to}`);
-    */
+    logger.info(`Email sent to ${to}`);
+    return true;
   } catch (error) {
-    // Silent fail if email service is down in demo
+    logger.error("Email send failed:", error);
+    return false;
   }
 };
 

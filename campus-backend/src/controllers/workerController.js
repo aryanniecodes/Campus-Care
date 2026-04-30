@@ -4,6 +4,7 @@ const Student = require("../models/Student");
 const { sendEmail } = require("../services/emailService");
 const Activity = require("../models/Activity");
 const Notification = require("../models/notification.model.js");
+const logger = require("../utils/logger");
 
 // 1. Get Logged In Worker (Me)
 exports.getWorkerMe = async (req, res) => {
@@ -37,50 +38,32 @@ exports.getWorkerMe = async (req, res) => {
 // 2. Get Assigned Tasks
 exports.getWorkerTasks = async (req, res) => {
   try {
-    const { workerId } = req.params;
-
-    const tasks = await Complaint.find({ assignedWorker: workerId })
-      .select("title description status category image createdAt")
+    const complaints = await Complaint.find({ assignedWorker: req.user.id })
       .sort({ createdAt: -1 });
 
-    res.status(200).json({
-      success: true,
-      data: { tasks }
-    });
+    res.status(200).json({ success: true, data: { tasks: complaints } });
   } catch (error) {
-    res.status(500).json({
-      success: false,
-      message: error.message
-    });
+    res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// 2. Mark Task Complete
+// 3. Mark Task Complete
 exports.completeTask = async (req, res) => {
   try {
-    const complaint = await Complaint.findById(req.params.id);
+    const { id } = req.params;
+    const { proofUrl } = req.body;
 
+    const complaint = await Complaint.findById(id);
     if (!complaint) {
-      return res.status(404).json({ message: "Complaint not found" });
+      return res.status(404).json({ success: false, message: "Complaint not found" });
     }
 
-    if (complaint.status === "completed") {
-      return res.status(400).json({
-        message: "Task already completed"
-      });
-    }
-
-    // Update complaint
     complaint.status = "completed";
+    complaint.proofUrl = proofUrl;
     complaint.history.push({ status: "completed", timestamp: new Date() });
     await complaint.save();
 
-    await Activity.create({
-      message: "Complaint marked as completed",
-      type: "completion"
-    });
-
-    // Update worker
+    // ── Update Worker Assigned Count ──
     const worker = await Worker.findById(req.user.id);
     if (worker) {
       worker.tasksAssigned = Math.max(0, (worker.tasksAssigned || 0) - 1);
@@ -89,13 +72,14 @@ exports.completeTask = async (req, res) => {
       const roleToCategory = {
         electrician: "electricity",
         plumber: "plumbing",
-        cleaner: "cleaning"
+        cleaner: "cleaning",
+        mess: "mess"
       };
 
       const pendingComplaint = await Complaint.findOne({
-        category: roleToCategory[worker.role] || "cleaning",
+        category: roleToCategory[worker.role],
         status: "pending"
-      });
+      }).sort({ createdAt: 1 });
 
       if (pendingComplaint) {
         pendingComplaint.assignedWorker = worker._id;
@@ -107,51 +91,49 @@ exports.completeTask = async (req, res) => {
 
         // Notify Worker (the one who just completed a task and got a new one)
         await Notification.create({
-          userId: worker.workerId,
-          role: "worker",
-          message: "New task assigned to you"
+          userId: worker._id,
+          userType: "Worker",
+          title: "New Task Auto-Assigned",
+          message: `Task "${pendingComplaint.title}" has been assigned to you from the queue.`,
+          type: "task_assigned"
         });
 
         if (worker.email) {
           const message = `Hello ${worker.name},\n\nYou have been automatically assigned a new task from the queue.\n\nTitle: ${pendingComplaint.title}\nCategory: ${pendingComplaint.category}\n\nPlease check your dashboard for details.\n\nBest regards,\nCampusCare Team`;
           await sendEmail(worker.email, "New Task Assigned - CampusCare", message);
         } else {
-          console.log(`[EMAIL SKIP] No valid worker email found for worker ID: ${worker._id}`);
+          logger.warn(`[EMAIL SKIP] No valid worker email found for worker ID: ${worker._id}`);
         }
       }
 
-      if (worker.tasksAssigned < 5) {
-        worker.available = true;
-      }
       await worker.save();
     }
 
     // Notify Student
     await Notification.create({
       userId: complaint.studentId,
-      role: "student",
-      message: "Your complaint has been resolved"
+      userType: "Student",
+      title: "Complaint Resolved",
+      message: `Your complaint "${complaint.title}" has been marked as completed.`,
+      type: "status_update"
     });
 
-    // Send email to student
     const student = await Student.findById(complaint.studentId);
-
     if (student && student.email) {
-      const message = `Hello ${student.name || 'Student'},\n\nYour complaint has been resolved.\n\nTitle: ${complaint.title}\nStatus: Completed\n\nThank you for your patience.\n\nBest regards,\nCampusCare Team`;
+      const message = `Hello ${student.name},\n\nYour complaint "${complaint.title}" has been marked as completed.\n\nPlease check the app to provide feedback.\n\nBest regards,\nCampusCare Team`;
 
       await sendEmail(student.email, "Complaint Resolved - CampusCare", message);
     } else {
-      console.log(`[EMAIL SKIP] No valid student email found for student ID: ${complaint.studentId}`);
+      logger.warn(`[EMAIL SKIP] No valid student email found for student ID: ${complaint.studentId}`);
     }
 
     res.json({ success: true, message: "Task marked as completed" });
-
   } catch (error) {
     res.status(500).json({ success: false, message: error.message });
   }
 };
 
-// 3. Toggle Availability
+// 4. Toggle Availability
 exports.toggleAvailability = async (req, res) => {
   try {
     const { workerId } = req.params;

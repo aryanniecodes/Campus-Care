@@ -1,4 +1,5 @@
 const { OpenAI } = require("openai");
+const logger = require("../utils/logger");
 
 let openai = null;
 
@@ -8,7 +9,7 @@ if (process.env.OPENAI_API_KEY) {
       apiKey: process.env.OPENAI_API_KEY,
     });
   } catch (error) {
-    console.error("Failed to initialize OpenAI client:", error.message);
+    logger.error("Failed to initialize OpenAI client:", error.message);
     openai = null;
   }
 }

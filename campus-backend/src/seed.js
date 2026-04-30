@@ -1,12 +1,13 @@
 const mongoose = require("mongoose");
 require("dotenv").config();
+const logger = require("./utils/logger");
 
 const Worker = require("./models/Worker");
 
 async function seedWorkers() {
   try {
     await mongoose.connect(process.env.MONGO_URI);
-    console.log("MongoDB Connected for seeding");
+    logger.info("MongoDB Connected for seeding");
 
     await Worker.deleteMany();
 
@@ -17,7 +18,8 @@ async function seedWorkers() {
         email: "aryaniecodes@gmail.com",
         role: "electrician",
         available: true,
-        tasksAssigned: 0
+        tasksAssigned: 0,
+        password: "password123" // Adding placeholder as password is required
       },
       {
         workerId: "W102",
@@ -25,7 +27,8 @@ async function seedWorkers() {
         email: "aryaniecodes@gmail.com",
         role: "plumber",
         available: true,
-        tasksAssigned: 0
+        tasksAssigned: 0,
+        password: "password123"
       },
       {
         workerId: "W103",
@@ -33,15 +36,16 @@ async function seedWorkers() {
         email: "aryaniecodes@gmail.com",
         role: "cleaner",
         available: true,
-        tasksAssigned: 0
+        tasksAssigned: 0,
+        password: "password123"
       }
     ]);
 
-    console.log("Workers seeded successfully");
+    logger.info("Workers seeded successfully");
     process.exit();
 
   } catch (err) {
-    console.error(err);
+    logger.error(err);
     process.exit(1);
   }
 }

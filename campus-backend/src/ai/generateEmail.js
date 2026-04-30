@@ -1,4 +1,5 @@
 const openai = require("./aiClient");
+const logger = require("../utils/logger");
 
 /**
  * Generates a professional email message using AI.
@@ -24,7 +25,7 @@ const generateEmail = async (title, category) => {
 
     return response.choices[0].message.content.trim();
   } catch (error) {
-    console.error("AI Email Generation error:", error.message);
+    logger.error("AI Email Generation error:", error.message);
     return `New task assigned: ${title}`;
   }
 };

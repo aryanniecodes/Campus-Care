@@ -1,25 +1,10 @@
-const isDev = process.env.NODE_ENV === 'development';
+const isDev = process.env.NODE_ENV === "development";
 
 const logger = {
-  info: (...args) => {
-    if (isDev) {
-      console.log(...args);
-    }
-  },
-  warn: (...args) => {
-    if (isDev) {
-      console.warn(...args);
-    }
-  },
-  error: (...args) => {
-    // Always log errors, even in production
-    console.error(...args);
-  },
-  debug: (...args) => {
-    if (isDev) {
-      console.debug(...args);
-    }
-  }
+  info: (...args) => isDev && console.log(...args),
+  warn: (...args) => isDev && console.warn(...args),
+  debug: (...args) => isDev && console.debug(...args),
+  error: (...args) => console.error(...args),
 };
 
 module.exports = logger;

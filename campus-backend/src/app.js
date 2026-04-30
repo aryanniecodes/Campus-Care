@@ -61,7 +61,7 @@ app.use(errorHandler);
 // ─── Server ────────────────────────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000;
 const server = app.listen(PORT, () => {
-  logger.info(`[SERVER] CampusCare API running on port ${PORT} | ENV: ${process.env.NODE_ENV || "development"}`);
+  logger.info(`[SERVER] Running on port ${PORT}`);
 });
 
 // ─── Process Level Error Handling ──────────────────────────────────────────────
