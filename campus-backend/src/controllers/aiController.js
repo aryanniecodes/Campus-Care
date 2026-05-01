@@ -6,48 +6,59 @@ const logger = require("../utils/logger");
 let hasLoggedFallbackWarning = false;
 
 // ── POST /api/ai/suggest ────────────────────────────────────────────────────
-// Input: { text: "partial complaint text" }
-// Output: { detected, category, improvedDescription, prompts }
 exports.getSuggestion = async (req, res) => {
   try {
     const { text } = req.body;
 
-    logger.debug(`[AI] Request received for text: "${text}"`);
-
-    if (!text || text.trim().length < 5) {
+    if (!text || text.trim().length < 3) {
       return res.json({
         success: true,
-        data: { detected: false, prompts: [] }
+        data: { detected: false, suggestions: "", prompts: [] }
       });
     }
 
     let suggestion;
     try {
-      // Try calling FastAPI service
+      // 1. Try calling FastAPI service
       const aiResponse = await axios.post("http://localhost:8000/suggest", { text }, { timeout: 3000 });
-      logger.debug("[AI] FastAPI Response:", aiResponse.data);
       
+      const hasSuggestions = aiResponse.data && aiResponse.data.suggestions && aiResponse.data.suggestions.length > 0;
+
+      if (!aiResponse.data || aiResponse.data.success === false || !hasSuggestions) {
+        throw new Error("Empty or unsuccessful response from AI");
+      }
+
       const { suggestions = [], category = "" } = aiResponse.data;
       
       suggestion = {
         detected: true,
         category: category,
-        improvedDescription: `There is a ${category} issue: ${text}. Please investigate.`,
+        suggestions: suggestions[0] || "Please provide more details about the issue.",
         prompts: suggestions
       };
     } catch (aiError) {
-      if (!hasLoggedFallbackWarning) {
-        logger.warn("[AI] FastAPI service unavailable, using local fallback. Error:", aiError.message);
-        hasLoggedFallbackWarning = true; // Prevent spam
-      }
-      // Fallback to local rule-based service
-      suggestion = generateSuggestion(text);
+      // 2. Meaningful fallback if AI fails or is empty
+      const fallbackText = "Please describe the issue clearly, include location and specific problem details.";
+      
+      suggestion = {
+        detected: false,
+        category: null,
+        suggestions: fallbackText,
+        prompts: [fallbackText]
+      };
     }
 
-    res.json({ success: true, data: suggestion });
+    res.json({ 
+      success: true, 
+      suggestions: suggestion.suggestions, // Normalized top-level for Task 2
+      data: suggestion 
+    });
   } catch (error) {
     logger.error("[AI] Error in getSuggestion:", error.message);
-    res.status(500).json({ success: false, message: error.message });
+    res.status(200).json({ 
+      success: true, 
+      suggestions: "Please describe the issue clearly, include location and specific problem details." 
+    });
   }
 };
 
@@ -86,21 +97,23 @@ exports.improveDescription = async (req, res) => {
       return res.status(400).json({ success: false, message: "Title and description are required" });
     }
 
-    logger.debug(`[AI] Improving description for: "${title}"`);
-
-    // Call FastAPI service
+    // 1. Call FastAPI service with 3s timeout
     const aiResponse = await axios.post("http://localhost:8000/improve-description", {
       title,
       description
     }, { timeout: 3000 });
 
+    if (!aiResponse.data || aiResponse.data.success === false) {
+      throw new Error("FastAPI returned unsuccessful status");
+    }
+
     res.json({ success: true, improvedText: aiResponse.data.improvedText });
   } catch (error) {
     if (!hasLoggedFallbackWarning) {
-      logger.warn("[AI] FastAPI improve-description unavailable, using local fallback. Error:", error.message);
+      logger.warn(`[AI] FastAPI improve-description unavailable. (${error.message})`);
       hasLoggedFallbackWarning = true;
     }
-    // Simple fallback if AI service fails
+    // 2. Simple fallback if AI service fails
     res.json({ 
       success: true, 
       improvedText: `${req.body.description}. This issue regarding ${req.body.title} needs urgent attention.` 

@@ -44,34 +44,42 @@ const CreateComplaint = () => {
   const [isImproving, setIsImproving] = useState(false);
   const [isEnhanced, setIsEnhanced] = useState(false);
   const [suggestions, setSuggestions] = useState({ detected: false, prompts: [], category: null, improvedDescription: null });
+  const [suggestion, setSuggestion] = useState(""); // Added singular suggestion state
   const [showSuggestions, setShowSuggestions] = useState(false);
 
   useEffect(() => {
+    const triggerText = formData.title || formData.description;
+    
     const timer = setTimeout(async () => {
-      if (formData.title.trim().length >= 5) {
+      if (triggerText.trim().length >= 3) {
         setAiLoading(true);
-        console.log("🔍 Triggering AI Suggestion for:", formData.title);
         try {
-          const res = await api.post("/ai/suggest", { text: formData.title });
-          console.log("✨ AI Response Received:", res.data);
-          if (res.data.success) {
-            setSuggestions(res.data.data);
+          const res = await api.post("/ai/suggest", { text: triggerText });
+          
+          if (res?.data?.success) {
+            // Task 2: Normalize and log
+            const aiText = res.data.suggestions || "";
+            console.log("AI Suggestion:", aiText);
+            
+            setSuggestion(aiText);
+            setSuggestions(res.data.data || { prompts: [aiText] });
             setShowSuggestions(true);
           }
         } catch (error) {
-          console.error("❌ AI Suggestion Error:", error);
-          // Silent fail for UX
+          // Task 5: Error safety
+          setSuggestion("Please describe the issue clearly, include location and specific problem details.");
+          setShowSuggestions(true);
         } finally {
           setAiLoading(false);
         }
       } else {
         setShowSuggestions(false);
-        setSuggestions({ detected: false, prompts: [], category: null, improvedDescription: null });
+        setSuggestion("");
       }
-    }, 500);
+    }, 800); // Slightly longer delay for description typing
 
     return () => clearTimeout(timer);
-  }, [formData.title]);
+  }, [formData.title, formData.description]);
 
   const applySuggestion = (type, value = null) => {
     if (type === 'category' && (value || suggestions.category)) {
@@ -85,7 +93,7 @@ const CreateComplaint = () => {
 
   const handleImproveDescription = async () => {
     if (!formData.description) return toast.error("Please enter a description first");
-    if (isImproving || isEnhanced) return; // Prevent double click or re-enhancing
+    if (isImproving || isEnhanced) return; 
     
     setIsImproving(true);
     const loadingToast = toast.loading("Enhancing your description...");
@@ -96,15 +104,15 @@ const CreateComplaint = () => {
         description: formData.description
       });
       
-      if (res.data.success) {
+      if (res?.data?.success && res?.data?.improvedText) {
         setFormData(prev => ({ ...prev, description: res.data.improvedText }));
         setIsEnhanced(true);
         toast.success("Description enhanced!", { id: loadingToast });
       } else {
-        toast.error("Failed to enhance description", { id: loadingToast });
+        toast.error("AI service currently unavailable", { id: loadingToast });
       }
     } catch (error) {
-      toast.error("Failed to enhance description", { id: loadingToast });
+      toast.error("Could not enhance description", { id: loadingToast });
     } finally {
       setIsImproving(false);
     }
@@ -172,7 +180,7 @@ const CreateComplaint = () => {
               </div>
             )}
 
-            {showSuggestions && (suggestions.detected || suggestions.prompts.length > 0) && !aiLoading && (
+            {showSuggestions && !aiLoading && (
               <div className="mt-2 p-4 bg-gradient-to-br from-blue-50 to-white rounded-xl border border-blue-100 shadow-sm animate-in fade-in slide-in-from-top-2 duration-300">
                 <div className="flex justify-between items-center mb-3">
                   <div className="flex items-center gap-2">
@@ -183,31 +191,30 @@ const CreateComplaint = () => {
                     </span>
                     <p className="text-xs font-bold text-blue-800 uppercase tracking-wider">AI Assistant</p>
                   </div>
-                  {suggestions.category && (
-                    <button 
-                      type="button"
-                      onClick={() => applySuggestion('category')}
-                      className="text-[10px] bg-blue-600 text-white px-3 py-1 rounded-full font-bold hover:bg-blue-700 transition-all hover:shadow-md"
-                    >
-                      Set Category to {suggestions.category}
-                    </button>
-                  )}
                 </div>
                 
                 <div className="space-y-2">
-                  <p className="text-[11px] font-medium text-blue-600/70 mb-1">Suggestions to include in description:</p>
-                  <div className="flex flex-wrap gap-2">
-                    {suggestions.prompts.map((p, i) => (
-                      <button
-                        key={i}
-                        type="button"
-                        onClick={() => applySuggestion('prompt', p)}
-                        className="text-[10px] bg-white border border-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-left shadow-sm"
-                      >
-                        + {p}
-                      </button>
-                    ))}
-                  </div>
+                  {/* Task 3: Render singular suggestion string */}
+                  {suggestion && suggestion.trim() !== "" && (
+                    <p className="text-sm text-blue-900 font-medium leading-relaxed italic border-l-2 border-blue-200 pl-3 py-1">
+                      "{suggestion}"
+                    </p>
+                  )}
+
+                  {suggestions.prompts && suggestions.prompts.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {suggestions.prompts.map((p, i) => (
+                        <button
+                          key={i}
+                          type="button"
+                          onClick={() => applySuggestion('prompt', p)}
+                          className="text-[10px] bg-white border border-blue-100 text-blue-700 px-3 py-1.5 rounded-lg hover:border-blue-300 hover:bg-blue-50 transition-all text-left shadow-sm"
+                        >
+                          + {p}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
